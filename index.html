@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Options Pricer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0D1B2A;
+    --navy-light: #142233;
+    --navy-mid: #1A2E45;
+    --navy-border: #243650;
+    --gold: #F0B429;
+    --gold-dim: #B8891F;
+    --text: #E8EDF3;
+    --text-dim: #8A9BB0;
+    --green: #22C55E;
+    --red: #EF4444;
+    --white: #F0F4F8;
+  }
+
+  body {
+    background: var(--navy);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--navy-light);
+    border-bottom: 2px solid var(--gold);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    gap: 16px;
+  }
+
+  #header-title {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gold);
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+
+  #ticker-display {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  #ticker-name {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 1px;
+  }
+
+  #ticker-price {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  #ticker-change {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  #market-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-open { background: rgba(34,197,94,0.2); color: var(--green); border: 1px solid var(--green); }
+  .status-closed { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
+
+  #last-updated {
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ── LAYOUT ── */
+  #main {
+    display: flex;
+    gap: 0;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── LEFT PANEL ── */
+  #left-panel {
+    width: 260px;
+    min-width: 260px;
+    background: var(--navy-light);
+    border-right: 1px solid var(--navy-border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-section {
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+
+  .panel-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .form-group:last-child { margin-bottom: 0; }
+
+  label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  input, select {
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: 'Times New Roman', Times, serif;
+    width: 100%;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--gold);
+  }
+
+  select option {
+    background: var(--navy-mid);
+  }
+
+  #ticker-input {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white);
+  }
+
+  .input-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  #submit-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, opacity 0.15s;
+  }
+
+  #submit-btn:hover { background: #e0a520; }
+  #submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* loading spinner inline */
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(240,180,41,0.3);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-left: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RIGHT PANEL ── */
+  #right-panel {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-x: hidden;
+  }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--navy-border);
+  }
+
+  .tab-btn {
+    padding: 8px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+    letter-spacing: 0.3px;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── CHART CONTAINER ── */
+  #chart-wrapper {
+    background: var(--navy-light);
+    border: 1px solid var(--navy-border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+    min-height: 340px;
+  }
+
+  #chart-wrapper canvas {
+    max-height: 300px;
+  }
+
+  /* ── TABLE ── */
+  #table-section {
+    background: var(--navy-light);
+    border: 1px solid var(--navy-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  #table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--navy-border);
+  }
+
+  #table-title {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--navy-mid);
+    color: var(--gold);
+    padding: 9px 12px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--navy-border);
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(36,54,80,0.6);
+    transition: background 0.1s;
+  }
+
+  tbody tr:hover { background: rgba(240,180,41,0.04); }
+
+  tbody tr.atm-row {
+    background: rgba(240,180,41,0.12);
+    border-left: 3px solid var(--gold);
+  }
+
+  tbody td {
+    padding: 8px 12px;
+    text-align: right;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  tbody td:first-child { text-align: left; }
+
+  .moneyness-itm { color: var(--green); font-weight: 600; }
+  .moneyness-otm { color: var(--red); }
+  .moneyness-atm { color: var(--gold); font-weight: 700; }
+
+  .diff-pos { color: var(--green); }
+  .diff-neg { color: var(--red); }
+
+  /* ── MESSAGES ── */
+  #placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--text-dim);
+    text-align: center;
+    gap: 12px;
+  }
+
+  #placeholder svg {
+    opacity: 0.25;
+  }
+
+  #placeholder h2 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 22px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  #placeholder p {
+    font-size: 13px;
+    max-width: 320px;
+    line-height: 1.6;
+  }
+
+  .error-msg {
+    background: rgba(239,68,68,0.12);
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #FCA5A5;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,27,42,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    z-index: 10;
+  }
+
+  .loading-overlay .big-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(240,180,41,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* quote mini-info */
+  #quote-info {
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: none;
+  }
+
+  #quote-info.visible { display: block; }
+  #quote-info .qi-line { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  #quote-info .qi-line:last-child { margin-bottom: 0; }
+  #quote-info .qi-val { color: var(--text); font-family: 'Times New Roman', Times, serif; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="header">
+  <div id="header-title">Options Pricer</div>
+
+  <div id="ticker-display">
+    <span id="ticker-name" style="display:none"></span>
+    <span id="ticker-price" style="display:none"></span>
+    <span id="ticker-change" style="display:none"></span>
+    <span id="market-status" style="display:none"></span>
+  </div>
+
+  <div id="last-updated"></div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+
+    <div class="panel-section">
+      <div class="panel-section-title">Ticker</div>
+      <div class="form-group">
+        <label for="ticker-input">Symbol</label>
+        <input type="text" id="ticker-input" placeholder="e.g. TSLA" autocomplete="off" spellcheck="false">
+        <div id="ticker-error" class="error-msg" style="display:none"></div>
+      </div>
+      <div id="quote-info">
+        <div class="qi-line"><span>Exchange</span><span class="qi-val" id="qi-exchange">—</span></div>
+        <div class="qi-line"><span>Currency</span><span class="qi-val" id="qi-currency">—</span></div>
+        <div class="qi-line"><span>Spot Price</span><span class="qi-val" id="qi-spot">—</span></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Expiry</div>
+      <div class="form-group">
+        <label for="expiry-select">Available Dates</label>
+        <select id="expiry-select" disabled>
+          <option value="">— enter ticker first —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="expiry-custom">Custom Date (override)</label>
+        <input type="text" id="expiry-custom" placeholder="YYYY-MM-DD">
+        <div class="input-hint">Overrides dropdown if filled</div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Strike Range</div>
+      <div class="form-group">
+        <label for="strike-start">Start</label>
+        <input type="number" id="strike-start" placeholder="e.g. 150" step="1">
+      </div>
+      <div class="form-group">
+        <label for="strike-end">End</label>
+        <input type="number" id="strike-end" placeholder="e.g. 350" step="1">
+      </div>
+      <div class="form-group">
+        <label for="strike-interval">Interval</label>
+        <input type="number" id="strike-interval" placeholder="e.g. 5" step="1" value="5">
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-title">Parameters</div>
+      <div class="form-group">
+        <label for="rfr-input">Risk-Free Rate (%)</label>
+        <input type="number" id="rfr-input" placeholder="e.g. 4.5" step="0.01">
+        <div class="input-hint">Auto-filled from API</div>
+      </div>
+      <div id="rfr-error" class="error-msg" style="display:none"></div>
+    </div>
+
+    <button id="submit-btn">Price Options</button>
+    <div id="submit-error" class="error-msg" style="display:none"></div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+
+    <!-- Placeholder -->
+    <div id="placeholder">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/><circle cx="18" cy="9" r="1" fill="currentColor"/>
+      </svg>
+      <h2>Options Pricing Dashboard</h2>
+      <p>Enter a ticker symbol and configure the strike range and expiry, then click <strong style="color:var(--gold)">Price Options</strong> to generate live BS prices vs market prices.</p>
+    </div>
+
+    <!-- Chart + Table (hidden until data loads) -->
+    <div id="results" style="display:none">
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="calls">Calls</button>
+        <button class="tab-btn" data-tab="puts">Puts</button>
+        <button class="tab-btn" data-tab="smile">Volatility Smile</button>
+      </div>
+
+      <div id="chart-wrapper">
+        <canvas id="main-chart"></canvas>
+        <div class="loading-overlay" id="chart-loading" style="display:none">
+          <div class="big-spinner"></div>
+        </div>
+      </div>
+
+      <div id="table-section">
+        <div id="table-header">
+          <span id="table-title">Calls</span>
+          <span id="spot-label" style="font-size:12px; color:var(--text-dim)"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="data-table">
+            <thead>
+              <tr>
+                <th>Strike</th>
+                <th>Moneyness</th>
+                <th>BS Price</th>
+                <th>Market</th>
+                <th>Diff</th>
+                <th>IV %</th>
+                <th>Delta</th>
+                <th>Gamma</th>
+                <th>Theta</th>
+                <th>Vega</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://options-pricer-api-xi.vercel.app';
+let chart = null;
+let currentData = null;
+let activeTab = 'calls';
+let currency = 'USD';
+let quoteInterval = null;
+
+// ── MARKET STATUS ──────────────────────────────────────────────
+function getMarketStatus(exchange) {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 6=Sat
+
+  let tz, open, close;
+
+  if (['NMS','NGM','NCM','NYQ'].includes(exchange)) {
+    // NYSE/NASDAQ: 9:30–16:00 ET (UTC-4 summer, UTC-5 winter)
+    const etOffset = isDST(now) ? -4 : -5;
+    const etHour = now.getUTCHours() + etOffset;
+    const etMin = now.getUTCMinutes();
+    const etFrac = etHour + etMin / 60;
+    const isWeekday = day >= 1 && day <= 5;
+    return isWeekday && etFrac >= 9.5 && etFrac < 16 ? 'open' : 'closed';
+  } else if (exchange === 'SGX') {
+    // SGX: 9:00–17:30 SGT (UTC+8)
+    const sgtHour = (now.getUTCHours() + 8) % 24;
+    const sgtMin = now.getUTCMinutes();
+    const sgtFrac = sgtHour + sgtMin / 60;
+    const isWeekday = day >= 1 && day <= 5;
+    return isWeekday && sgtFrac >= 9 && sgtFrac < 17.5 ? 'open' : 'closed';
+  } else if (exchange === 'HKG') {
+    // HKEx: 9:30–16:00 HKT (UTC+8)
+    const hktHour = (now.getUTCHours() + 8) % 24;
+    const hktMin = now.getUTCMinutes();
+    const hktFrac = hktHour + hktMin / 60;
+    const isWeekday = day >= 1 && day <= 5;
+    return isWeekday && hktFrac >= 9.5 && hktFrac < 16 ? 'open' : 'closed';
+  } else if (exchange === 'LSE') {
+    // LSE: 8:00–16:30 BST (UTC+1) or GMT (UTC+0)
+    const lseOffset = isDST_UK(now) ? 1 : 0;
+    const lseHour = (now.getUTCHours() + lseOffset) % 24;
+    const lseMin = now.getUTCMinutes();
+    const lseFrac = lseHour + lseMin / 60;
+    const isWeekday = day >= 1 && day <= 5;
+    return isWeekday && lseFrac >= 8 && lseFrac < 16.5 ? 'open' : 'closed';
+  } else {
+    // Default: NYSE hours
+    const etOffset = isDST(now) ? -4 : -5;
+    const etHour = now.getUTCHours() + etOffset;
+    const etMin = now.getUTCMinutes();
+    const etFrac = etHour + etMin / 60;
+    const isWeekday = day >= 1 && day <= 5;
+    return isWeekday && etFrac >= 9.5 && etFrac < 16 ? 'open' : 'closed';
+  }
+}
+
+function isDST(d) {
+  // US DST: 2nd Sun Mar – 1st Sun Nov
+  const jan = new Date(d.getUTCFullYear(), 0, 1).getTimezoneOffset();
+  const jul = new Date(d.getUTCFullYear(), 6, 1).getTimezoneOffset();
+  return d.getTimezoneOffset() < Math.max(jan, jul);
+}
+
+function isDST_UK(d) {
+  // UK DST: last Sun Mar – last Sun Oct
+  const mar = lastSunday(d.getUTCFullYear(), 2);
+  const oct = lastSunday(d.getUTCFullYear(), 9);
+  return d >= mar && d < oct;
+}
+
+function lastSunday(year, month) {
+  const d = new Date(Date.UTC(year, month + 1, 0));
+  d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+  return d;
+}
+
+// ── QUOTE REFRESH ──────────────────────────────────────────────
+async function fetchQuote(ticker, silent = false) {
+  try {
+    const res = await fetch(`${API}/api/quote?ticker=${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    currency = data.currency || 'USD';
+    const sym = data.currency === 'USD' ? '$' : data.currency;
+
+    document.getElementById('ticker-name').textContent = data.ticker;
+    document.getElementById('ticker-name').style.display = '';
+    document.getElementById('ticker-price').textContent = `${sym}${(+data.price).toFixed(2)}`;
+    document.getElementById('ticker-price').style.display = '';
+
+    const chg = +data.change;
+    const chgPct = +data.change_pct;
+    const chgEl = document.getElementById('ticker-change');
+    chgEl.style.display = '';
+    chgEl.textContent = `${chg >= 0 ? '+' : ''}${chg.toFixed(2)} (${chg >= 0 ? '+' : ''}${chgPct.toFixed(2)}%)`;
+    chgEl.style.color = chg >= 0 ? 'var(--green)' : 'var(--red)';
+
+    const status = getMarketStatus(data.exchange);
+    const statusEl = document.getElementById('market-status');
+    statusEl.style.display = '';
+    statusEl.textContent = status === 'open' ? 'Market Open' : 'Market Closed';
+    statusEl.className = 'market-status ' + (status === 'open' ? 'status-open' : 'status-closed');
+
+    // mini quote info in sidebar
+    document.getElementById('qi-exchange').textContent = data.exchange || '—';
+    document.getElementById('qi-currency').textContent = data.currency || '—';
+    document.getElementById('qi-spot').textContent = `${sym}${(+data.price).toFixed(2)}`;
+    document.getElementById('quote-info').classList.add('visible');
+
+    document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+    if (!silent) clearError('ticker-error');
+    return data;
+  } catch (e) {
+    if (!silent) showError('ticker-error', e.message || 'Failed to fetch quote');
+    return null;
+  }
+}
+
+async function fetchRFR(ticker) {
+  try {
+    const res = await fetch(`${API}/api/rfr?ticker=${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('rfr-input').value = (data.rate * 100).toFixed(3);
+    clearError('rfr-error');
+  } catch (e) {
+    showError('rfr-error', 'Could not fetch RFR: ' + e.message);
+  }
+}
+
+async function fetchExpiries(ticker) {
+  const sel = document.getElementById('expiry-select');
+  sel.disabled = true;
+  sel.innerHTML = '<option>Loading…</option>';
+  try {
+    const res = await fetch(`${API}/api/expiries?ticker=${encodeURIComponent(ticker)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    sel.innerHTML = '';
+    (data.expiries || []).forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d;
+      sel.appendChild(opt);
+    });
+    sel.disabled = false;
+  } catch (e) {
+    sel.innerHTML = '<option>Failed to load</option>';
+    showError('ticker-error', 'Could not load expiries: ' + e.message);
+  }
+}
+
+// ── TICKER INPUT ──────────────────────────────────────────────
+let tickerTimeout = null;
+document.getElementById('ticker-input').addEventListener('input', function() {
+  const val = this.value.toUpperCase().trim();
+  this.value = val;
+  clearTimeout(tickerTimeout);
+  if (val.length >= 1) {
+    tickerTimeout = setTimeout(async () => {
+      clearError('ticker-error');
+      const q = await fetchQuote(val);
+      if (q) {
+        await Promise.all([fetchRFR(val), fetchExpiries(val)]);
+        // Auto-suggest strike range around current price
+        const price = +q.price;
+        const mag = Math.pow(10, Math.floor(Math.log10(price)) - 1);
+        const interval = price > 500 ? 10 : price > 100 ? 5 : 2.5;
+        if (!document.getElementById('strike-start').value) {
+          document.getElementById('strike-start').value = Math.round((price * 0.8) / interval) * interval;
+          document.getElementById('strike-end').value = Math.round((price * 1.2) / interval) * interval;
+          document.getElementById('strike-interval').value = interval;
+        }
+        // restart quote refresh
+        if (quoteInterval) clearInterval(quoteInterval);
+        quoteInterval = setInterval(() => fetchQuote(val, true), 30000);
+      }
+    }, 600);
+  }
+});
+
+// ── SUBMIT ─────────────────────────────────────────────────────
+document.getElementById('submit-btn').addEventListener('click', async () => {
+  clearError('submit-error');
+
+  const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+  const expiry = document.getElementById('expiry-custom').value.trim() || document.getElementById('expiry-select').value;
+  const strikeStart = document.getElementById('strike-start').value;
+  const strikeEnd = document.getElementById('strike-end').value;
+  const strikeInterval = document.getElementById('strike-interval').value;
+  const rfr = document.getElementById('rfr-input').value;
+
+  if (!ticker) return showError('submit-error', 'Please enter a ticker symbol.');
+  if (!expiry) return showError('submit-error', 'Please select or enter an expiry date.');
+  if (!strikeStart || !strikeEnd) return showError('submit-error', 'Please enter strike start and end.');
+
+  const r = rfr ? +rfr / 100 : 0.045;
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'Pricing… <span class="spinner"></span>';
+
+  document.getElementById('chart-loading').style.display = 'flex';
+
+  const url = `${API}/api/price?ticker=${encodeURIComponent(ticker)}&strike_start=${strikeStart}&strike_end=${strikeEnd}&strike_interval=${strikeInterval || 5}&expiry=${encodeURIComponent(expiry)}&r=${r}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    currentData = data;
+    currentData._expiry = expiry;
+
+    document.getElementById('placeholder').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+
+    renderChart(activeTab);
+    renderTable(activeTab);
+
+    const sym = currency === 'USD' ? '$' : currency;
+    document.getElementById('spot-label').textContent = `Spot: ${sym}${(+data.spot).toFixed(2)}  ·  T = ${(+data.T).toFixed(4)} yrs`;
+
+  } catch (e) {
+    showError('submit-error', e.message || 'Pricing failed. Please check inputs.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Price Options';
+    document.getElementById('chart-loading').style.display = 'none';
+  }
+});
+
+// ── TABS ───────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTab = btn.dataset.tab;
+    if (currentData) {
+      renderChart(activeTab);
+      renderTable(activeTab);
+    }
+  });
+});
+
+// ── CHART ──────────────────────────────────────────────────────
+function renderChart(tab) {
+  if (!currentData) return;
+
+  if (chart) { chart.destroy(); chart = null; }
+
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  const sym = currency === 'USD' ? '$' : currency + ' ';
+
+  const gridColor = 'rgba(36,54,80,0.6)';
+  const tickColor = '#8A9BB0';
+
+  Chart.defaults.color = tickColor;
+  Chart.defaults.font.family = "'Times New Roman', Times, serif";
+
+  if (tab === 'calls' || tab === 'puts') {
+    const rows = tab === 'calls' ? currentData.calls : currentData.puts;
+    const strikes = rows.map(r => r.strike);
+    const bs = rows.map(r => +r.bs_price);
+    const mkt = rows.map(r => +r.market_price);
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: strikes,
+        datasets: [
+          {
+            label: 'BS Price',
+            data: bs,
+            borderColor: '#F0B429',
+            backgroundColor: 'rgba(240,180,41,0.08)',
+            tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            fill: false,
+          },
+          {
+            label: 'Market Price',
+            data: mkt,
+            borderColor: '#60A5FA',
+            backgroundColor: 'rgba(96,165,250,0.08)',
+            tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            borderDash: [5, 3],
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: '#E8EDF3', font: { size: 12 } } },
+          tooltip: {
+            backgroundColor: '#142233',
+            borderColor: '#243650',
+            borderWidth: 1,
+            callbacks: {
+              title: items => `Strike: ${sym}${items[0].label}`,
+              label: item => ` ${item.dataset.label}: ${sym}${item.parsed.y.toFixed(2)}`
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Strike Price', color: tickColor },
+            grid: { color: gridColor },
+            ticks: { color: tickColor }
+          },
+          y: {
+            title: { display: true, text: `Option Price (${currency})`, color: tickColor },
+            grid: { color: gridColor },
+            ticks: {
+              color: tickColor,
+              callback: v => sym + v.toFixed(2)
+            }
+          }
+        }
+      }
+    });
+
+  } else if (tab === 'smile') {
+    // Volatility smile — use calls data for IV
+    const rows = currentData.calls;
+    const strikes = rows.map(r => r.strike);
+    const iv = rows.map(r => +(r.iv) * 100);
+    const ivLower = rows.map(r => +(r.iv_lower) * 100);
+    const ivUpper = rows.map(r => +(r.iv_upper) * 100);
+
+    const lowerLabel = currentData.lower_expiry ? `Lower Bracket (${currentData.lower_expiry})` : 'Lower Bracket IV';
+    const upperLabel = currentData.upper_expiry ? `Upper Bracket (${currentData.upper_expiry})` : 'Upper Bracket IV';
+    const midLabel = `Interpolated IV (${currentData._expiry})`;
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: strikes,
+        datasets: [
+          {
+            label: lowerLabel,
+            data: ivLower,
+            borderColor: '#60A5FA',
+            tension: 0.35,
+            pointRadius: 2,
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            fill: false,
+          },
+          {
+            label: midLabel,
+            data: iv,
+            borderColor: '#F0B429',
+            tension: 0.35,
+            pointRadius: 3,
+            borderWidth: 2.5,
+            fill: false,
+          },
+          {
+            label: upperLabel,
+            data: ivUpper,
+            borderColor: '#A78BFA',
+            tension: 0.35,
+            pointRadius: 2,
+            borderWidth: 1.5,
+            borderDash: [4, 3],
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: '#E8EDF3', font: { size: 11 } } },
+          tooltip: {
+            backgroundColor: '#142233',
+            borderColor: '#243650',
+            borderWidth: 1,
+            callbacks: {
+              title: items => `Strike: ${sym}${items[0].label}`,
+              label: item => ` ${item.dataset.label}: ${item.parsed.y.toFixed(2)}%`
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Strike Price', color: tickColor },
+            grid: { color: gridColor },
+            ticks: { color: tickColor }
+          },
+          y: {
+            title: { display: true, text: 'Implied Volatility (%)', color: tickColor },
+            grid: { color: gridColor },
+            ticks: {
+              color: tickColor,
+              callback: v => v.toFixed(1) + '%'
+            }
+          }
+        }
+      }
+    });
+  }
+}
+
+// ── TABLE ──────────────────────────────────────────────────────
+function renderTable(tab) {
+  if (!currentData) return;
+
+  const rows = (tab === 'puts') ? currentData.puts : currentData.calls;
+  const spot = +currentData.spot;
+  const sym = currency === 'USD' ? '$' : currency + ' ';
+
+  document.getElementById('table-title').textContent = tab === 'puts' ? 'Puts' : (tab === 'smile' ? 'Calls' : 'Calls');
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  // find ATM row (closest to spot)
+  let atmIdx = 0;
+  let minDist = Infinity;
+  rows.forEach((r, i) => {
+    const d = Math.abs(r.strike - spot);
+    if (d < minDist) { minDist = d; atmIdx = i; }
+  });
+
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    if (i === atmIdx) tr.className = 'atm-row';
+
+    const mn = r.moneyness || '';
+    let mnClass = 'moneyness-otm';
+    let mnLabel = mn;
+    if (mn.toLowerCase().includes('atm')) { mnClass = 'moneyness-atm'; mnLabel = 'ATM'; }
+    else if (mn.toLowerCase().includes('itm')) { mnClass = 'moneyness-itm'; }
+    else if (mn.toLowerCase().includes('otm')) { mnClass = 'moneyness-otm'; }
+
+    const diff = +r.diff;
+    const diffClass = diff >= 0 ? 'diff-pos' : 'diff-neg';
+
+    tr.innerHTML = `
+      <td><strong>${sym}${(+r.strike).toFixed(2)}</strong></td>
+      <td class="${mnClass}">${mnLabel}</td>
+      <td>${sym}${(+r.bs_price).toFixed(4)}</td>
+      <td>${sym}${(+r.market_price).toFixed(4)}</td>
+      <td class="${diffClass}">${diff >= 0 ? '+' : ''}${diff.toFixed(4)}</td>
+      <td>${((+r.iv) * 100).toFixed(2)}%</td>
+      <td>${(+r.delta).toFixed(4)}</td>
+      <td>${(+r.gamma).toFixed(6)}</td>
+      <td>${(+r.theta).toFixed(4)}</td>
+      <td>${(+r.vega).toFixed(4)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function clearError(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'none';
+  el.textContent = '';
+}
+</script>
+</body>
+</html>
