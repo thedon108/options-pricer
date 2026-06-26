@@ -1371,16 +1371,17 @@ function renderTermStructure() {
   const tick = '#4a6280';
   const grid = 'rgba(31,58,86,0.55)';
 
-  // For each expiry in cache, find ATM call IV
+  // For each expiry in cache, find nearest strike WITH valid IV to spot
   const points = [];
   allExpiries.forEach(exp => {
     const chain = chainCache[exp];
     if (!chain || !chain.calls || !chain.calls.length) return;
-    const atm = chain.calls.reduce((best, r) =>
+    const validCalls = chain.calls.filter(r => r.impliedVolatility > 0.01 && r.impliedVolatility < 5);
+    if (!validCalls.length) return;
+    const atm = validCalls.reduce((best, r) =>
       Math.abs(r.strike - spot) < Math.abs(best.strike - spot) ? r : best
     );
-    const iv = atm.impliedVolatility;
-    if (iv && iv > 0.01 && iv < 5) points.push({ exp, iv: iv * 100 });
+    points.push({ exp, iv: atm.impliedVolatility * 100, strike: atm.strike });
   });
 
   if (!points.length) {
