@@ -735,6 +735,88 @@ tbody td:first-child {
 .diff-pos { color: var(--teal); }
 .diff-neg { color: var(--coral); }
 
+/* ══════════════════════════════════════
+   VOL SURFACE HEATMAP
+══════════════════════════════════════ */
+#surface-container {
+  overflow-x: auto;
+  padding: 4px 0 8px;
+}
+
+#surface-grid {
+  display: inline-grid;
+  border: 1px solid var(--navy-border);
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 100%;
+}
+
+.sg-header-cell {
+  background: var(--navy-mid);
+  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-align: center;
+  padding: 6px 8px;
+  white-space: nowrap;
+  border-right: 1px solid var(--navy-border);
+  border-bottom: 1px solid var(--navy-border);
+}
+
+.sg-expiry-cell {
+  background: var(--navy-mid);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 6px 10px;
+  white-space: nowrap;
+  border-right: 1px solid var(--navy-border);
+  border-bottom: 1px solid rgba(31,58,86,0.4);
+  text-align: left;
+}
+
+.sg-cell {
+  text-align: center;
+  padding: 5px 4px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11px;
+  font-weight: 700;
+  border-right: 1px solid rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  cursor: default;
+  transition: filter 0.1s;
+  min-width: 52px;
+}
+
+.sg-cell:hover { filter: brightness(1.25); }
+.sg-cell.sg-empty { color: var(--text-muted); background: rgba(13,27,42,0.5) !important; }
+.sg-cell.sg-atm { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+#surface-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+#surface-legend-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #1c3a5e, #2563a8, #F0B429, #F97316, #EF4444);
+  max-width: 260px;
+}
+
+#surface-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  font-style: italic;
+}
+
 /* USD toggle */
 #usd-toggle {
   display: none;
@@ -932,9 +1014,21 @@ tbody td:first-child {
           <button class="tab-btn active" data-tab="calls">Calls</button>
           <button class="tab-btn" data-tab="puts">Puts</button>
           <button class="tab-btn" data-tab="smile">Volatility Smile</button>
+          <button class="tab-btn" data-tab="termstructure">Term Structure</button>
+          <button class="tab-btn" data-tab="surface">Vol Surface</button>
         </div>
         <div id="chart-wrapper">
           <canvas id="main-chart"></canvas>
+          <canvas id="term-chart" style="display:none; max-height:310px"></canvas>
+          <div id="surface-container" style="display:none">
+            <div id="surface-grid"></div>
+            <div id="surface-legend">
+              <span>Low IV</span>
+              <div id="surface-legend-bar"></div>
+              <span>High IV</span>
+            </div>
+            <div id="surface-note"></div>
+          </div>
           <div class="loading-overlay" id="chart-loading" style="display:none">
             <div class="big-spinner"></div>
           </div>
@@ -982,6 +1076,11 @@ let currency = 'USD';
 let quoteInterval = null;
 let fxRate = 1.0;
 let usdMode = false;
+let termChart = null;
+let allExpiries = [];
+let chainCache = {};
+let volDataLoaded = false;
+let currentTicker = '';
 
 function dispSym() {
   if (usdMode) return '$';
@@ -1049,9 +1148,12 @@ function hideSuggestions() {
 
 async function selectTicker(ticker) {
   selectedTicker = ticker;
+  currentTicker = ticker;
   document.getElementById('ticker-input').value = ticker;
   hideSuggestions();
   clearError('ticker-error');
+  chainCache = {};
+  volDataLoaded = false;
   // Clear strike range so it auto-suggests for the new ticker
   document.getElementById('strike-start').value = '';
   document.getElementById('strike-end').value = '';
@@ -1209,20 +1311,205 @@ async function fetchExpiries(ticker) {
     const res = await fetch(`${API}/api/expiries?ticker=${encodeURIComponent(ticker)}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    allExpiries = data.expiries || [];
+    chainCache = {};
+    volDataLoaded = false;
     sel.innerHTML = '';
-    (data.expiries || []).forEach(d => {
+    allExpiries.forEach(d => {
       const opt = document.createElement('option');
       opt.value = d; opt.textContent = d;
       sel.appendChild(opt);
     });
     sel.disabled = false;
-    // Update stat
     if (sel.value) updateExpiryStat(sel.value);
     sel.addEventListener('change', () => updateExpiryStat(sel.value));
   } catch (e) {
     sel.innerHTML = '<option>Failed to load</option>';
     showError('ticker-error', 'Could not load expiries: ' + e.message);
   }
+}
+
+async function fetchAllChains(ticker) {
+  const toFetch = allExpiries.filter(e => !chainCache[e]);
+  await Promise.all(toFetch.map(async e => {
+    try {
+      const res = await fetch(`${API}/api/chain?ticker=${encodeURIComponent(ticker)}&expiry=${e}`);
+      const data = await res.json();
+      if (!data.error) chainCache[e] = data;
+    } catch (_) {}
+  }));
+  volDataLoaded = true;
+}
+
+function ivColor(iv) {
+  // iv is 0-100 (percentage). Map to color:
+  // <15% deep blue, 25% mid-blue, 35% gold, 50%+ red
+  const stops = [
+    [0,   [28,  58,  94]],
+    [20,  [37,  99,  168]],
+    [35,  [240, 180, 41]],
+    [55,  [249, 115, 22]],
+    [80,  [239, 68,  68]],
+  ];
+  iv = Math.max(0, Math.min(100, iv));
+  let lo = stops[0], hi = stops[stops.length-1];
+  for (let i = 0; i < stops.length-1; i++) {
+    if (iv >= stops[i][0] && iv <= stops[i+1][0]) { lo = stops[i]; hi = stops[i+1]; break; }
+  }
+  const t = (lo[0] === hi[0]) ? 0 : (iv - lo[0]) / (hi[0] - lo[0]);
+  const r = Math.round(lo[1][0] + t*(hi[1][0]-lo[1][0]));
+  const g = Math.round(lo[1][1] + t*(hi[1][1]-lo[1][1]));
+  const b = Math.round(lo[1][2] + t*(hi[1][2]-lo[1][2]));
+  // Text white on dark, dark on light
+  const lum = 0.299*r + 0.587*g + 0.114*b;
+  return { bg: `rgb(${r},${g},${b})`, text: lum > 160 ? '#0D1B2A' : '#f0f4f8' };
+}
+
+function renderTermStructure() {
+  if (!currentData) return;
+  const spot = +currentData.spot;
+  const tick = '#4a6280';
+  const grid = 'rgba(31,58,86,0.55)';
+
+  // For each expiry in cache, find ATM call IV
+  const points = [];
+  allExpiries.forEach(exp => {
+    const chain = chainCache[exp];
+    if (!chain || !chain.calls || !chain.calls.length) return;
+    const atm = chain.calls.reduce((best, r) =>
+      Math.abs(r.strike - spot) < Math.abs(best.strike - spot) ? r : best
+    );
+    const iv = atm.impliedVolatility;
+    if (iv && iv > 0.01 && iv < 5) points.push({ exp, iv: iv * 100 });
+  });
+
+  if (!points.length) {
+    document.getElementById('surface-note').textContent = 'No IV data available for term structure.';
+    return;
+  }
+
+  if (termChart) { termChart.destroy(); termChart = null; }
+
+  const ctx = document.getElementById('term-chart').getContext('2d');
+  termChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: points.map(p => p.exp),
+      datasets: [{
+        label: 'ATM Implied Volatility',
+        data: points.map(p => p.iv),
+        borderColor: '#F0B429',
+        backgroundColor: 'rgba(240,180,41,0.08)',
+        tension: 0.3,
+        pointRadius: 5,
+        pointBackgroundColor: '#F0B429',
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: '#7a8fa8', font: { size: 11 }, boxWidth: 24, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#112236',
+          borderColor: '#1f3a56',
+          borderWidth: 1,
+          titleColor: '#dde5ef',
+          bodyColor: '#7a8fa8',
+          callbacks: {
+            title: items => `Expiry: ${items[0].label}`,
+            label: item => ` ATM IV: ${item.parsed.y.toFixed(2)}%`
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Expiry Date', color: tick, font: { size: 11 } },
+          grid: { color: grid },
+          ticks: { color: tick, font: { size: 10 }, maxRotation: 45 }
+        },
+        y: {
+          title: { display: true, text: 'ATM Implied Volatility (%)', color: tick, font: { size: 11 } },
+          grid: { color: grid },
+          ticks: { color: tick, font: { size: 11 }, callback: v => v.toFixed(1) + '%' }
+        }
+      }
+    }
+  });
+}
+
+function renderVolSurface() {
+  if (!currentData) return;
+  const spot = +currentData.spot;
+
+  // Moneyness buckets: 70% to 130% of spot
+  const moneyness = [0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25,1.30];
+  const expiries = allExpiries.filter(e => chainCache[e] && chainCache[e].calls && chainCache[e].calls.length);
+
+  if (!expiries.length) {
+    document.getElementById('surface-note').textContent = 'No chain data available for vol surface.';
+    return;
+  }
+
+  const cols = moneyness.length;
+  const grid = document.getElementById('surface-grid');
+  grid.style.gridTemplateColumns = `90px repeat(${cols}, 1fr)`;
+  grid.innerHTML = '';
+
+  // Header row
+  const corner = document.createElement('div');
+  corner.className = 'sg-header-cell';
+  corner.textContent = 'Expiry \\ K/S';
+  grid.appendChild(corner);
+
+  moneyness.forEach(m => {
+    const h = document.createElement('div');
+    h.className = 'sg-header-cell';
+    h.textContent = (m * 100).toFixed(0) + '%';
+    grid.appendChild(h);
+  });
+
+  // Data rows
+  expiries.forEach(exp => {
+    const calls = chainCache[exp].calls;
+
+    const expCell = document.createElement('div');
+    expCell.className = 'sg-expiry-cell';
+    expCell.textContent = exp.slice(5); // show MM-DD only
+    expCell.title = exp;
+    grid.appendChild(expCell);
+
+    moneyness.forEach(m => {
+      const targetStrike = spot * m;
+      // Find nearest available strike
+      const nearest = calls.reduce((best, r) =>
+        Math.abs(r.strike - targetStrike) < Math.abs(best.strike - targetStrike) ? r : best
+      );
+      const iv = nearest.impliedVolatility;
+      const cell = document.createElement('div');
+      cell.className = 'sg-cell';
+      if (Math.abs(m - 1.0) < 0.01) cell.classList.add('sg-atm');
+
+      if (!iv || iv < 0.005 || iv > 5) {
+        cell.classList.add('sg-empty');
+        cell.textContent = '—';
+      } else {
+        const ivPct = iv * 100;
+        const { bg, text } = ivColor(ivPct);
+        cell.style.background = bg;
+        cell.style.color = text;
+        cell.textContent = ivPct.toFixed(1) + '%';
+        cell.title = `Expiry: ${exp}\nStrike: ${nearest.strike} (${(m*100).toFixed(0)}% moneyness)\nIV: ${ivPct.toFixed(2)}%`;
+      }
+      grid.appendChild(cell);
+    });
+  });
+
+  document.getElementById('surface-note').textContent =
+    `${expiries.length} expiries × ${cols} moneyness levels · ATM column outlined in gold · strikes nearest to K/S target`;
 }
 
 function updateExpiryStat(expiry) {
@@ -1277,6 +1564,7 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   clearError('submit-error');
 
   const ticker = selectedTicker || document.getElementById('ticker-input').value.trim().toUpperCase();
+  currentTicker = ticker;
   const expiry = document.getElementById('expiry-custom').value.trim() || document.getElementById('expiry-select').value;
   const strikeStart = document.getElementById('strike-start').value;
   const strikeEnd = document.getElementById('strike-end').value;
@@ -1351,11 +1639,37 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
 
 // ── TABS ───────────────────────────────────────────────────────
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeTab = btn.dataset.tab;
-    if (currentData) {
+
+    const isVolTab = activeTab === 'termstructure' || activeTab === 'surface';
+    document.getElementById('main-chart').style.display = isVolTab ? 'none' : '';
+    document.getElementById('term-chart').style.display = activeTab === 'termstructure' ? '' : 'none';
+    document.getElementById('surface-container').style.display = activeTab === 'surface' ? '' : 'none';
+
+    if (!currentData) return;
+
+    if (isVolTab) {
+      // hide table for vol tabs
+      document.getElementById('table-card').style.display = 'none';
+      document.getElementById('chart-card-title').textContent =
+        activeTab === 'termstructure' ? 'ATM IV Term Structure' : 'Implied Volatility Surface';
+
+      if (!volDataLoaded) {
+        document.getElementById('chart-loading').style.display = 'flex';
+        await fetchAllChains(currentTicker);
+        document.getElementById('chart-loading').style.display = 'none';
+      }
+
+      if (activeTab === 'termstructure') renderTermStructure();
+      else renderVolSurface();
+
+    } else {
+      document.getElementById('table-card').style.display = '';
+      document.getElementById('chart-card-title').textContent = 'BS Price vs Market';
+      if (termChart) { termChart.destroy(); termChart = null; }
       renderChart(activeTab);
       renderTable(activeTab);
     }
