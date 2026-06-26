@@ -1331,9 +1331,11 @@ async function fetchExpiries(ticker) {
 
 async function fetchAllChains(ticker) {
   const toFetch = allExpiries.filter(e => !chainCache[e]);
+  const r = document.getElementById('rfr-input').value || '4.5';
+  const rDecimal = (+r / 100).toFixed(6);
   await Promise.all(toFetch.map(async e => {
     try {
-      const res = await fetch(`${API}/api/chain?ticker=${encodeURIComponent(ticker)}&expiry=${e}`);
+      const res = await fetch(`${API}/api/chain?ticker=${encodeURIComponent(ticker)}&expiry=${e}&r=${rDecimal}`);
       const data = await res.json();
       if (!data.error) chainCache[e] = data;
     } catch (_) {}
