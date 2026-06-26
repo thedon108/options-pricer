@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Options Pricer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -54,8 +55,8 @@ html { scroll-behavior: smooth; }
   #hero h1 { font-size: 20px; }
   #hero-sub { font-size: 11px; }
 
-  #stats-row { grid-template-columns: repeat(2, 1fr); }
-  .stat-value { font-size: 20px; }
+  #stats-row { grid-template-columns: repeat(4, 1fr); }
+  .stat-value { font-size: 18px; }
 
   #content {
     grid-template-columns: 1fr;
@@ -225,7 +226,7 @@ body {
 ══════════════════════════════════════ */
 #stats-row {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   background: var(--navy-border);
   border-top: 1px solid var(--navy-border);
@@ -237,10 +238,10 @@ body {
 
 .stat-card {
   background: var(--navy-light);
-  padding: 16px 20px 14px;
+  padding: 12px 14px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .stat-label {
@@ -253,7 +254,7 @@ body {
 
 .stat-value {
   font-family: 'Times New Roman', Times, serif;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--gold);
   line-height: 1.1;
@@ -894,6 +895,11 @@ tbody td:first-child {
     <div class="stat-value dim" id="stat-strikes">—</div>
     <div class="stat-desc" id="stat-interval">—</div>
   </div>
+  <div class="stat-card">
+    <div class="stat-label">Implied Volatility</div>
+    <div class="stat-value neutral" id="stat-iv">—</div>
+    <div class="stat-desc" id="stat-iv-desc">ATM interpolated</div>
+  </div>
 </div>
 
 <!-- ══ CONTENT ══ -->
@@ -1016,10 +1022,51 @@ tbody td:first-child {
           <button class="tab-btn" data-tab="smile">Volatility Smile</button>
           <button class="tab-btn" data-tab="termstructure">Term Structure</button>
           <button class="tab-btn" data-tab="surface">Vol Surface</button>
+          <button class="tab-btn" data-tab="hv">HV vs IV</button>
+          <button class="tab-btn" data-tab="payoff">Payoff</button>
         </div>
         <div id="chart-wrapper">
           <canvas id="main-chart"></canvas>
           <canvas id="term-chart" style="display:none; max-height:310px"></canvas>
+          <canvas id="hv-chart" style="display:none; max-height:310px"></canvas>
+          <div id="hv-stats" style="display:none; margin-top:12px; display:none">
+            <div id="hv-stat-cards" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center"></div>
+            <div id="hv-signal" style="margin-top:10px; text-align:center; font-size:13px; color:var(--text-dim)"></div>
+          </div>
+          <!-- Payoff diagram controls + canvas -->
+          <div id="payoff-container" style="display:none">
+            <div id="payoff-controls" style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 4px 14px;border-bottom:1px solid var(--navy-border);margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Strategy</label>
+                <select id="payoff-strategy" style="background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 10px;border-radius:6px;cursor:pointer">
+                  <option value="long_call">Long Call</option>
+                  <option value="long_put">Long Put</option>
+                  <option value="short_call">Short Call (Naked)</option>
+                  <option value="short_put">Short Put</option>
+                  <option value="covered_call">Covered Call</option>
+                  <option value="protective_put">Protective Put</option>
+                  <option value="straddle">Long Straddle</option>
+                  <option value="strangle">Long Strangle</option>
+                  <option value="bull_call">Bull Call Spread</option>
+                  <option value="bear_put">Bear Put Spread</option>
+                  <option value="iron_condor">Iron Condor</option>
+                  <option value="butterfly">Butterfly Spread</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Strike</label>
+                <input id="payoff-strike" type="number" step="1" style="width:90px;background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 8px;border-radius:6px" placeholder="ATM">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Premium Paid</label>
+                <input id="payoff-premium" type="number" step="0.01" min="0" style="width:90px;background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 8px;border-radius:6px" placeholder="auto">
+              </div>
+              <button id="payoff-draw-btn" style="background:var(--gold);color:var(--navy);border:none;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px">Draw</button>
+            </div>
+            <canvas id="payoff-chart" style="max-height:310px"></canvas>
+            <div id="payoff-stats" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:14px;font-size:12px"></div>
+          </div>
+
           <div id="surface-container" style="display:none">
             <div id="surface-grid"></div>
             <div id="surface-legend">
@@ -1077,6 +1124,8 @@ let quoteInterval = null;
 let fxRate = 1.0;
 let usdMode = false;
 let termChart = null;
+let hvChart = null;
+let payoffChart = null;
 let allExpiries = [];
 let chainCache = {};
 let volDataLoaded = false;
@@ -1444,6 +1493,123 @@ function renderTermStructure() {
   });
 }
 
+async function renderHvChart(ticker) {
+  if (hvChart) { hvChart.destroy(); hvChart = null; }
+  const statCards = document.getElementById('hv-stat-cards');
+  const signal    = document.getElementById('hv-signal');
+  statCards.innerHTML = '';
+  signal.textContent  = '';
+
+  let data;
+  try {
+    const res = await fetch(`${API}/api/hv?ticker=${encodeURIComponent(ticker)}`);
+    data = await res.json();
+    if (data.error) throw new Error(data.error);
+  } catch (e) {
+    signal.textContent = `Could not load HV data: ${e.message}`;
+    return;
+  }
+
+  // Stat chips
+  const chips = [
+    { label: '20d HV', val: data.hv20_current, color: '#4a9eff' },
+    { label: '30d HV', val: data.hv30_current, color: '#4a9eff' },
+    { label: '60d HV', val: data.hv60_current, color: '#4a9eff' },
+    { label: 'ATM IV',  val: data.atm_iv,       color: '#d4a017' },
+  ];
+  chips.forEach(({ label, val, color }) => {
+    if (val == null) return;
+    const el = document.createElement('div');
+    el.style.cssText = `background:var(--navy-light);border:1px solid var(--navy-border);border-radius:8px;padding:10px 18px;text-align:center;min-width:100px`;
+    el.innerHTML = `<div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">${label}</div>
+                    <div style="font-size:20px;font-weight:700;color:${color}">${(val * 100).toFixed(1)}%</div>`;
+    statCards.appendChild(el);
+  });
+
+  // IV premium signal
+  if (data.iv_premium != null) {
+    const prem = data.iv_premium * 100;
+    const absPrem = Math.abs(prem).toFixed(1);
+    if (prem > 2) {
+      signal.innerHTML = `<span style="color:#e05c5c">IV is <strong>${absPrem}pp above</strong> 30d HV — options appear <strong>expensive</strong> (sell vol bias)</span>`;
+    } else if (prem < -2) {
+      signal.innerHTML = `<span style="color:#4fc97e">IV is <strong>${absPrem}pp below</strong> 30d HV — options appear <strong>cheap</strong> (buy vol bias)</span>`;
+    } else {
+      signal.innerHTML = `<span style="color:var(--text-dim)">IV is within <strong>${absPrem}pp</strong> of 30d HV — options are <strong>fairly priced</strong></span>`;
+    }
+  }
+
+  // Chart
+  const ctx  = document.getElementById('hv-chart').getContext('2d');
+  const grid = 'rgba(31,58,86,0.55)';
+  const tick = '#4a6280';
+  Chart.defaults.color = tick;
+  Chart.defaults.font.family = "'Times New Roman', Times, serif";
+
+  const ivLine = data.atm_iv != null
+    ? data.dates.map(() => +(data.atm_iv * 100).toFixed(2))
+    : null;
+
+  const datasets = [
+    {
+      label: '30d Realised HV',
+      data: data.hv30.map(v => +(v * 100).toFixed(2)),
+      borderColor: '#4a9eff',
+      backgroundColor: 'rgba(74,158,255,0.08)',
+      fill: true,
+      tension: 0.35,
+      pointRadius: 0,
+      borderWidth: 2,
+    },
+  ];
+  if (ivLine) {
+    datasets.push({
+      label: 'ATM Implied Volatility',
+      data: ivLine,
+      borderColor: '#d4a017',
+      borderWidth: 2,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      tension: 0,
+      fill: false,
+    });
+  }
+
+  hvChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: data.dates, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: tick, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: tick, font: { size: 10 }, maxTicksLimit: 10,
+                   callback: (_, i, arr) => {
+                     if (i === 0 || i === arr.length - 1 || i % Math.floor(arr.length / 6) === 0)
+                       return data.dates[i] ? data.dates[i].slice(5) : '';
+                     return '';
+                   }},
+          grid: { color: grid },
+        },
+        y: {
+          title: { display: true, text: 'Volatility (%)', color: tick, font: { size: 11 } },
+          ticks: { color: tick, font: { size: 11 }, callback: v => v.toFixed(0) + '%' },
+          grid: { color: grid },
+        }
+      }
+    }
+  });
+}
+
 function renderVolSurface() {
   if (!currentData) return;
   const spot = +currentData.spot;
@@ -1628,6 +1794,10 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
       const ivPct = (+atmCall.iv).toFixed(1);
       document.getElementById('insight-text').textContent =
         `ATM strike ${sym}${conv(+atmCall.strike).toFixed(2)}: BS ${sym}${conv(+atmCall.bs_price).toFixed(2)} vs Market ${sym}${conv(+atmCall.market_price).toFixed(2)}. ATM IV ${ivPct}%.`;
+      const statIv = document.getElementById('stat-iv');
+      statIv.textContent = `${ivPct}%`;
+      statIv.className = 'stat-value ' + ((+atmCall.iv) > 0.5 ? 'red' : (+atmCall.iv) > 0.25 ? 'neutral' : 'green');
+      document.getElementById('stat-iv-desc').textContent = atmCall.iv_fallback ? 'fallback estimate' : 'ATM interpolated';
     }
     document.getElementById('insight-box').classList.add('visible');
 
@@ -1647,15 +1817,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     activeTab = btn.dataset.tab;
 
-    const isVolTab = activeTab === 'termstructure' || activeTab === 'surface';
-    document.getElementById('main-chart').style.display = isVolTab ? 'none' : '';
-    document.getElementById('term-chart').style.display = activeTab === 'termstructure' ? '' : 'none';
+    const isVolTab    = activeTab === 'termstructure' || activeTab === 'surface';
+    const isHvTab     = activeTab === 'hv';
+    const isPayoffTab = activeTab === 'payoff';
+    document.getElementById('main-chart').style.display        = (!isVolTab && !isHvTab && !isPayoffTab) ? '' : 'none';
+    document.getElementById('term-chart').style.display        = activeTab === 'termstructure' ? '' : 'none';
+    document.getElementById('hv-chart').style.display          = isHvTab ? '' : 'none';
+    document.getElementById('hv-stats').style.display          = isHvTab ? 'block' : 'none';
+    document.getElementById('payoff-container').style.display  = isPayoffTab ? '' : 'none';
     document.getElementById('surface-container').style.display = activeTab === 'surface' ? '' : 'none';
 
     if (!currentData) return;
 
     if (isVolTab) {
-      // hide table for vol tabs
       document.getElementById('table-card').style.display = 'none';
       document.getElementById('chart-card-title').textContent =
         activeTab === 'termstructure' ? 'ATM IV Term Structure' : 'Implied Volatility Surface';
@@ -1669,6 +1843,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       if (activeTab === 'termstructure') renderTermStructure();
       else renderVolSurface();
 
+    } else if (isHvTab) {
+      document.getElementById('table-card').style.display = 'none';
+      document.getElementById('chart-card-title').textContent = 'Historical Volatility vs Implied Volatility';
+      document.getElementById('chart-loading').style.display = 'flex';
+      await renderHvChart(currentTicker);
+      document.getElementById('chart-loading').style.display = 'none';
+
+    } else if (isPayoffTab) {
+      document.getElementById('table-card').style.display = 'none';
+      document.getElementById('chart-card-title').textContent = 'Strategy Payoff at Expiry';
+      renderPayoff();
+
     } else {
       document.getElementById('table-card').style.display = '';
       document.getElementById('chart-card-title').textContent = 'BS Price vs Market';
@@ -1680,6 +1866,344 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ── CHART ──────────────────────────────────────────────────────
+// ── PAYOFF DIAGRAM ─────────────────────────────────────────────
+function renderPayoff() {
+  if (!currentData) return;
+  if (payoffChart) { payoffChart.destroy(); payoffChart = null; }
+
+  const spot   = +currentData.spot;
+  const sym    = dispSym();
+  const calls  = currentData.calls || [];
+  const puts   = currentData.puts  || [];
+
+  // Pick ATM strike and BS price as default
+  const atmCall = calls.reduce((b, r) => Math.abs(r.strike - spot) < Math.abs((b?.strike||Infinity) - spot) ? r : b, null);
+  const atmPut  = puts.reduce((b, r)  => Math.abs(r.strike - spot) < Math.abs((b?.strike||Infinity) - spot) ? r : b, null);
+
+  const K1input = document.getElementById('payoff-strike');
+  const Ppinput = document.getElementById('payoff-premium');
+  const strategy = document.getElementById('payoff-strategy').value;
+
+  const K1 = K1input.value ? +K1input.value : (atmCall ? +atmCall.strike : spot);
+  // For spread strategies, use a second strike ~5% away
+  const K2 = +(K1 * 1.05).toFixed(0);
+  const K3 = +(K1 * 0.95).toFixed(0);
+
+  // Look up BS prices for these strikes
+  function bsPrice(rows, K, fallback) {
+    const row = rows.reduce((b, r) => Math.abs(r.strike - K) < Math.abs((b?.strike||Infinity) - K) ? r : b, null);
+    return row ? conv(+row.bs_price) : fallback;
+  }
+
+  const C1 = bsPrice(calls, K1, conv(atmCall ? +atmCall.bs_price : 5));
+  const P1 = bsPrice(puts,  K1, conv(atmPut  ? +atmPut.bs_price  : 5));
+  const C2 = bsPrice(calls, K2, C1 * 0.5);
+  const P2 = bsPrice(puts,  K3, P1 * 0.5);
+
+  const userPrem = Ppinput.value ? +Ppinput.value : null;
+
+  // Spot range: 60%–140% of current spot
+  const lo  = spot * 0.60;
+  const hi  = spot * 1.40;
+  const N   = 300;
+  const step = (hi - lo) / N;
+  const spots = Array.from({length: N+1}, (_, i) => lo + i * step);
+
+  // Payoff functions at expiry (per unit, before premium)
+  const callPayoff = (S, K) => Math.max(S - K, 0);
+  const putPayoff  = (S, K) => Math.max(K - S, 0);
+
+  let pnl, label, color, maxProfit, maxLoss, breakevens;
+
+  switch (strategy) {
+    case 'long_call': {
+      const prem = userPrem ?? C1;
+      pnl = spots.map(S => conv(callPayoff(S, K1)) - prem);
+      label = `Long Call  K=${sym}${K1}  Premium=${sym}${prem.toFixed(2)}`;
+      color = '#4fc97e';
+      maxProfit = '∞';
+      maxLoss   = `-${sym}${prem.toFixed(2)}`;
+      breakevens = [K1 + prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'long_put': {
+      const prem = userPrem ?? P1;
+      pnl = spots.map(S => conv(putPayoff(S, K1)) - prem);
+      label = `Long Put  K=${sym}${K1}  Premium=${sym}${prem.toFixed(2)}`;
+      color = '#4a9eff';
+      maxProfit = `${sym}${(conv(K1) - prem).toFixed(2)}`;
+      maxLoss   = `-${sym}${prem.toFixed(2)}`;
+      breakevens = [K1 - prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'short_call': {
+      const prem = userPrem ?? C1;
+      pnl = spots.map(S => prem - conv(callPayoff(S, K1)));
+      label = `Short Call  K=${sym}${K1}  Premium=${sym}${prem.toFixed(2)}`;
+      color = '#e05c5c';
+      maxProfit = `${sym}${prem.toFixed(2)}`;
+      maxLoss   = '−∞';
+      breakevens = [K1 + prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'short_put': {
+      const prem = userPrem ?? P1;
+      pnl = spots.map(S => prem - conv(putPayoff(S, K1)));
+      label = `Short Put  K=${sym}${K1}  Premium=${sym}${prem.toFixed(2)}`;
+      color = '#d4a017';
+      maxProfit = `${sym}${prem.toFixed(2)}`;
+      maxLoss   = `-${sym}${(conv(K1) - prem).toFixed(2)}`;
+      breakevens = [K1 - prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'covered_call': {
+      const prem = userPrem ?? C1;
+      const spotEntry = conv(spot);
+      pnl = spots.map(S => (conv(S) - spotEntry) + prem - conv(callPayoff(S, K1)));
+      label = `Covered Call  K=${sym}${K1}`;
+      color = '#4fc97e';
+      maxProfit = `${sym}${(conv(K1) - spotEntry + prem).toFixed(2)}`;
+      maxLoss   = `-${sym}${(spotEntry - prem).toFixed(2)}`;
+      breakevens = [spot - prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'protective_put': {
+      const prem = userPrem ?? P1;
+      const spotEntry = conv(spot);
+      pnl = spots.map(S => (conv(S) - spotEntry) + conv(putPayoff(S, K1)) - prem);
+      label = `Protective Put  K=${sym}${K1}`;
+      color = '#4a9eff';
+      maxProfit = '∞';
+      maxLoss   = `-${sym}${(spotEntry - conv(K1) + prem).toFixed(2)}`;
+      breakevens = [spot + prem / (usdMode ? fxRate : 1)];
+      break;
+    }
+    case 'straddle': {
+      const prem = userPrem ?? (C1 + P1);
+      pnl = spots.map(S => conv(callPayoff(S, K1)) + conv(putPayoff(S, K1)) - prem);
+      label = `Long Straddle  K=${sym}${K1}  Total Premium=${sym}${prem.toFixed(2)}`;
+      color = '#c084fc';
+      maxProfit = '∞';
+      maxLoss   = `-${sym}${prem.toFixed(2)}`;
+      breakevens = [K1 - prem/(usdMode?fxRate:1), K1 + prem/(usdMode?fxRate:1)];
+      break;
+    }
+    case 'strangle': {
+      const callK = K2, putK = K3;
+      const cPrem = bsPrice(calls, callK, C1 * 0.7);
+      const pPrem = bsPrice(puts,  putK,  P1 * 0.7);
+      const prem  = userPrem ?? (cPrem + pPrem);
+      pnl = spots.map(S => conv(callPayoff(S, callK)) + conv(putPayoff(S, putK)) - prem);
+      label = `Long Strangle  Call K=${sym}${callK}  Put K=${sym}${putK}`;
+      color = '#c084fc';
+      maxProfit = '∞';
+      maxLoss   = `-${sym}${prem.toFixed(2)}`;
+      breakevens = [putK - prem/(usdMode?fxRate:1), callK + prem/(usdMode?fxRate:1)];
+      break;
+    }
+    case 'bull_call': {
+      const longPrem  = C1;
+      const shortPrem = C2;
+      const net = userPrem ?? (longPrem - shortPrem);
+      pnl = spots.map(S => conv(callPayoff(S, K1)) - conv(callPayoff(S, K2)) - net);
+      label = `Bull Call Spread  Buy ${sym}${K1} / Sell ${sym}${K2}  Net=${sym}${net.toFixed(2)}`;
+      color = '#4fc97e';
+      maxProfit = `${sym}${(conv(K2 - K1) - net).toFixed(2)}`;
+      maxLoss   = `-${sym}${net.toFixed(2)}`;
+      breakevens = [K1 + net/(usdMode?fxRate:1)];
+      break;
+    }
+    case 'bear_put': {
+      const longPrem  = P1;
+      const shortPrem = P2;
+      const net = userPrem ?? (longPrem - shortPrem);
+      pnl = spots.map(S => conv(putPayoff(S, K1)) - conv(putPayoff(S, K3)) - net);
+      label = `Bear Put Spread  Buy ${sym}${K1} / Sell ${sym}${K3}  Net=${sym}${net.toFixed(2)}`;
+      color = '#4a9eff';
+      maxProfit = `${sym}${(conv(K1 - K3) - net).toFixed(2)}`;
+      maxLoss   = `-${sym}${net.toFixed(2)}`;
+      breakevens = [K1 - net/(usdMode?fxRate:1)];
+      break;
+    }
+    case 'iron_condor': {
+      // Sell K1 put, Buy K3 put, Sell K2 call, Buy outer call
+      const outerCall = K2 + (K2 - K1);
+      const outerPut  = K3 - (K1 - K3);
+      const shortCallP = C2;
+      const longCallP  = bsPrice(calls, outerCall, C2 * 0.4);
+      const shortPutP  = P2;
+      const longPutP   = bsPrice(puts, outerPut, P2 * 0.4);
+      const net = userPrem ?? (shortCallP - longCallP + shortPutP - longPutP);
+      pnl = spots.map(S => {
+        const payoff = -conv(callPayoff(S, K2)) + conv(callPayoff(S, outerCall))
+                      -conv(putPayoff(S, K3))  + conv(putPayoff(S, outerPut));
+        return payoff + net;
+      });
+      label = `Iron Condor  Puts: ${sym}${outerPut}/${sym}${K3}  Calls: ${sym}${K2}/${sym}${outerCall}`;
+      color = '#d4a017';
+      maxProfit = `${sym}${net.toFixed(2)}`;
+      maxLoss   = `-${sym}${(conv(K2-K3) - net).toFixed(2)}`;
+      breakevens = [K3 - net/(usdMode?fxRate:1), K2 + net/(usdMode?fxRate:1)];
+      break;
+    }
+    case 'butterfly': {
+      const wing = conv(K2 - K1);
+      const net = userPrem ?? (C1 - 2*C2 + bsPrice(calls, K2+(K2-K1), C2*0.3));
+      const Kwing = K2 + (K2 - K1);
+      pnl = spots.map(S =>
+        conv(callPayoff(S, K1)) - 2*conv(callPayoff(S, K2)) + conv(callPayoff(S, Kwing)) - net
+      );
+      label = `Butterfly  ${sym}${K1}/${sym}${K2}/${sym}${Kwing}`;
+      color = '#fb923c';
+      maxProfit = `${sym}${(wing - net).toFixed(2)}`;
+      maxLoss   = `-${sym}${net.toFixed(2)}`;
+      breakevens = [K1 + net/(usdMode?fxRate:1), Kwing - net/(usdMode?fxRate:1)];
+      break;
+    }
+    default:
+      return;
+  }
+
+  // Stats bar
+  const statsEl = document.getElementById('payoff-stats');
+  const be = breakevens.map(b => `${sym}${conv(b).toFixed(2)}`).join(' / ');
+  statsEl.innerHTML = [
+    ['Max Profit', maxProfit, '#4fc97e'],
+    ['Max Loss',   maxLoss,   '#e05c5c'],
+    ['Break-even', be,        '#d4a017'],
+  ].map(([lbl, val, col]) => `
+    <div style="background:var(--navy-light);border:1px solid var(--navy-border);border-radius:8px;padding:8px 18px;text-align:center">
+      <div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px">${lbl}</div>
+      <div style="font-size:17px;font-weight:700;color:${col}">${val}</div>
+    </div>`).join('');
+
+  // Split into profit (green) and loss (red) segments for fill
+  const profitPnl = pnl.map(v => v >= 0 ? v : null);
+  const lossPnl   = pnl.map(v => v <  0 ? v : null);
+
+  // Current spot vertical reference
+  const spotIdx = spots.reduce((bi, s, i) => Math.abs(s - spot) < Math.abs(spots[bi] - spot) ? i : bi, 0);
+
+  const grid  = 'rgba(31,58,86,0.55)';
+  const tick  = '#4a6280';
+  Chart.defaults.color = tick;
+  Chart.defaults.font.family = "'Times New Roman', Times, serif";
+
+  const ctx = document.getElementById('payoff-chart').getContext('2d');
+  const labels = spots.map(s => conv(s).toFixed(2));
+
+  payoffChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Profit',
+          data: profitPnl,
+          borderColor: '#4fc97e',
+          backgroundColor: 'rgba(79,201,126,0.15)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 0,
+          borderWidth: 0,
+          spanGaps: false,
+        },
+        {
+          label: 'Loss',
+          data: lossPnl,
+          borderColor: '#e05c5c',
+          backgroundColor: 'rgba(224,92,92,0.15)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 0,
+          borderWidth: 0,
+          spanGaps: false,
+        },
+        {
+          label,
+          data: pnl,
+          borderColor: color,
+          borderWidth: 2.5,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.2,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: {
+            color: tick,
+            font: { size: 11 },
+            filter: item => item.datasetIndex === 2,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            title: ctx => `Spot: ${sym}${ctx[0].label}`,
+            label: ctx => {
+              if (ctx.datasetIndex !== 2) return null;
+              const v = ctx.parsed.y;
+              return `P&L: ${v >= 0 ? '+' : ''}${sym}${v.toFixed(2)}`;
+            },
+          }
+        },
+        annotation: {
+          annotations: {
+            zero: {
+              type: 'line', yMin: 0, yMax: 0,
+              borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1,
+            },
+            spotLine: {
+              type: 'line',
+              xMin: labels[spotIdx], xMax: labels[spotIdx],
+              borderColor: 'rgba(212,160,23,0.5)',
+              borderWidth: 1, borderDash: [4, 4],
+              label: { content: `Spot ${sym}${conv(spot).toFixed(0)}`, display: true, position: 'start', color: '#d4a017', font: { size: 10 } }
+            },
+            ...Object.fromEntries(breakevens.map((be, i) => {
+              const beLabel = labels.reduce((bl, l) => Math.abs(+l - conv(be)) < Math.abs(+bl - conv(be)) ? l : bl, labels[0]);
+              return [`be${i}`, {
+                type: 'line',
+                xMin: beLabel, xMax: beLabel,
+                borderColor: 'rgba(255,255,255,0.25)',
+                borderWidth: 1, borderDash: [3, 3],
+                label: { content: `BE ${sym}${conv(be).toFixed(2)}`, display: true, position: 'end', color: '#aaa', font: { size: 9 } }
+              }];
+            }))
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: tick, font: { size: 10 }, maxTicksLimit: 10,
+            callback: (_, i) => i % Math.floor(N/8) === 0 ? `${sym}${labels[i]}` : '',
+          },
+          grid: { color: grid },
+          title: { display: true, text: 'Spot Price at Expiry', color: tick, font: { size: 11 } }
+        },
+        y: {
+          ticks: {
+            color: tick, font: { size: 11 },
+            callback: v => (v >= 0 ? '+' : '') + sym + v.toFixed(2),
+          },
+          grid: { color: grid },
+          title: { display: true, text: `P&L (${usdMode ? 'USD' : currency})`, color: tick, font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Wire up payoff Draw button and strategy change
+document.getElementById('payoff-draw-btn').addEventListener('click', renderPayoff);
+document.getElementById('payoff-strategy').addEventListener('change', () => { if (activeTab === 'payoff') renderPayoff(); });
+
 function renderChart(tab) {
   if (!currentData) return;
   if (chart) { chart.destroy(); chart = null; }
