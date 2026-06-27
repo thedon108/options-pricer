@@ -846,13 +846,14 @@ tbody td:first-child {
 <header id="header">
   <div id="header-left">
     <span id="header-title">Options Pricer</span>
-    <span class="live-badge">Live</span>
+    <span class="live-badge" id="hdr-live-badge" style="display:none">LIVE</span>
   </div>
   <div id="header-right">
     <span id="hdr-price"></span>
     <span id="hdr-change"></span>
     <span id="hdr-expiry-pill"></span>
-    <span id="hdr-live-dot"><span class="dot"></span>Live</span>
+    <span id="hdr-live-dot" style="display:none"><span class="dot"></span>Live</span>
+    <span id="hdr-closed-dot" style="display:none; font-size:12px; color:#e05c5c; letter-spacing:0.5px">● Closed</span>
     <button id="usd-toggle" title="Convert all prices to USD"><span class="toggle-icon">$</span> Show in USD</button>
   </div>
 </header>
@@ -1319,6 +1320,12 @@ async function fetchQuote(ticker, silent = false) {
     statStatus.textContent = status === 'open' ? 'Open' : 'Closed';
     statStatus.className = 'stat-value ' + (status === 'open' ? 'teal' : 'red');
     document.getElementById('stat-exchange').textContent = data.exchange || '—';
+
+    // Header status indicators
+    const isOpen = status === 'open';
+    document.getElementById('hdr-live-badge').style.display = isOpen ? '' : 'none';
+    document.getElementById('hdr-live-dot').style.display   = isOpen ? '' : 'none';
+    document.getElementById('hdr-closed-dot').style.display = isOpen ? 'none' : '';
 
     // Left panel quote rows
     document.getElementById('qi-spot').textContent = `${price.toFixed(2)} ${data.currency || ''}`;
