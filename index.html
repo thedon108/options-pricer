@@ -1025,6 +1025,7 @@ tbody td:first-child {
           <button class="tab-btn" data-tab="surface">Vol Surface</button>
           <button class="tab-btn" data-tab="hv">HV vs IV</button>
           <button class="tab-btn" data-tab="payoff">Payoff</button>
+          <button class="tab-btn" data-tab="eko">EKO Call</button>
         </div>
         <div id="chart-wrapper">
           <canvas id="main-chart"></canvas>
@@ -1066,6 +1067,39 @@ tbody td:first-child {
             </div>
             <canvas id="payoff-chart" style="max-height:310px"></canvas>
             <div id="payoff-stats" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:14px;font-size:12px"></div>
+          </div>
+
+          <!-- EKO Call pricer -->
+          <div id="eko-container" style="display:none">
+            <div id="eko-form" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:10px 4px 14px;border-bottom:1px solid var(--navy-border);margin-bottom:14px">
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Strike (K)</label>
+                <input id="eko-strike" type="number" step="1" style="width:100px;background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 8px;border-radius:6px" placeholder="e.g. 150">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Barrier (B)</label>
+                <input id="eko-barrier" type="number" step="1" style="width:100px;background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 8px;border-radius:6px" placeholder="e.g. 200">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <label style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">Expiry (optional)</label>
+                <input id="eko-expiry" type="text" style="width:130px;background:var(--navy-light);border:1px solid var(--navy-border);color:var(--text);font-size:13px;padding:5px 8px;border-radius:6px" placeholder="YYYY-MM-DD or blank=1yr">
+              </div>
+              <button id="eko-price-btn" style="background:var(--gold);color:var(--navy);border:none;padding:7px 18px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.5px;height:32px">Price EKO</button>
+              <div id="eko-error" style="color:#fca5a5;font-size:12px;align-self:center;display:none"></div>
+            </div>
+
+            <!-- Results -->
+            <div id="eko-results" style="display:none">
+              <!-- Stat chips -->
+              <div id="eko-cards" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"></div>
+              <!-- Payoff chart -->
+              <canvas id="eko-chart" style="max-height:280px"></canvas>
+              <!-- Decomposition -->
+              <div id="eko-decomp" style="margin-top:14px;padding:12px 14px;background:rgba(240,180,41,0.04);border:1px solid rgba(240,180,41,0.18);border-radius:8px;font-size:12px;color:var(--text-dim);line-height:1.8"></div>
+            </div>
+            <div id="eko-placeholder" style="text-align:center;color:var(--text-muted);padding:40px 20px;font-size:13px">
+              Enter a strike above the spot, a barrier above the strike, then click <strong style="color:var(--gold)">Price EKO</strong>.
+            </div>
           </div>
 
           <div id="surface-container" style="display:none">
@@ -1827,11 +1861,13 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     const isVolTab    = activeTab === 'termstructure' || activeTab === 'surface';
     const isHvTab     = activeTab === 'hv';
     const isPayoffTab = activeTab === 'payoff';
-    document.getElementById('main-chart').style.display        = (!isVolTab && !isHvTab && !isPayoffTab) ? '' : 'none';
+    const isEkoTab    = activeTab === 'eko';
+    document.getElementById('main-chart').style.display        = (!isVolTab && !isHvTab && !isPayoffTab && !isEkoTab) ? '' : 'none';
     document.getElementById('term-chart').style.display        = activeTab === 'termstructure' ? '' : 'none';
     document.getElementById('hv-chart').style.display          = isHvTab ? '' : 'none';
     document.getElementById('hv-stats').style.display          = isHvTab ? 'block' : 'none';
     document.getElementById('payoff-container').style.display  = isPayoffTab ? '' : 'none';
+    document.getElementById('eko-container').style.display     = isEkoTab ? '' : 'none';
     document.getElementById('surface-container').style.display = activeTab === 'surface' ? '' : 'none';
 
     if (!currentData) return;
@@ -1861,6 +1897,20 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       document.getElementById('table-card').style.display = 'none';
       document.getElementById('chart-card-title').textContent = 'Strategy Payoff at Expiry';
       renderPayoff();
+
+    } else if (isEkoTab) {
+      document.getElementById('table-card').style.display = 'none';
+      document.getElementById('chart-card-title').textContent = 'European Knockout (EKO) Call Pricer';
+      // Pre-fill strike/barrier from current data if available
+      if (currentData) {
+        const spot = +currentData.spot;
+        if (!document.getElementById('eko-strike').value)
+          document.getElementById('eko-strike').value = Math.round(spot * 1.0 / 5) * 5;
+        if (!document.getElementById('eko-barrier').value)
+          document.getElementById('eko-barrier').value = Math.round(spot * 1.2 / 5) * 5;
+        if (!document.getElementById('eko-expiry').value && currentData._expiry)
+          document.getElementById('eko-expiry').value = currentData._expiry;
+      }
 
     } else {
       document.getElementById('table-card').style.display = '';
@@ -2206,6 +2256,115 @@ function renderPayoff() {
     }
   });
 }
+
+// ── EKO CALL PRICER ────────────────────────────────────────────
+let ekoChart = null;
+
+async function fetchEko() {
+  const ticker = currentTicker || document.getElementById('ticker-input').value.trim().toUpperCase();
+  const strike  = +document.getElementById('eko-strike').value;
+  const barrier = +document.getElementById('eko-barrier').value;
+  const expiry  = document.getElementById('eko-expiry').value.trim();
+  const errEl   = document.getElementById('eko-error');
+  errEl.style.display = 'none';
+
+  if (!ticker) { errEl.textContent = 'Load a ticker first.'; errEl.style.display = ''; return; }
+  if (!strike || !barrier) { errEl.textContent = 'Enter both strike and barrier.'; errEl.style.display = ''; return; }
+  if (barrier <= strike) { errEl.textContent = 'Barrier must be above strike.'; errEl.style.display = ''; return; }
+
+  const btn = document.getElementById('eko-price-btn');
+  btn.disabled = true; btn.textContent = 'Pricing…';
+
+  try {
+    let url = `${API}/api/eko?ticker=${encodeURIComponent(ticker)}&strike=${strike}&barrier=${barrier}`;
+    if (expiry) url += `&expiry=${encodeURIComponent(expiry)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    document.getElementById('eko-placeholder').style.display = 'none';
+    document.getElementById('eko-results').style.display     = '';
+
+    const sym  = dispSym();
+    const spot = data.spot;
+    const iv   = (data.iv * 100).toFixed(1);
+    const disc = (data.ko_discount / data.vanilla_price * 100).toFixed(1);
+
+    // Stat chips
+    const cards = document.getElementById('eko-cards');
+    cards.innerHTML = [
+      { label: 'Spot',          val: `${sym}${conv(spot).toFixed(2)}`,          col: '#F0B429' },
+      { label: 'ATM IV',        val: `${iv}%`,                                  col: '#4a9eff' },
+      { label: 'Vanilla Call',  val: `${sym}${conv(data.vanilla_price).toFixed(4)}`, col: '#dde5ef' },
+      { label: 'EKO Call',      val: `${sym}${conv(data.eko_price).toFixed(4)}`,     col: '#4fc97e' },
+      { label: 'KO Discount',   val: `${sym}${conv(data.ko_discount).toFixed(4)} (${disc}%)`, col: '#e05c5c' },
+    ].map(({ label, val, col }) => `
+      <div style="background:var(--navy-light);border:1px solid var(--navy-border);border-radius:8px;padding:10px 18px;text-align:center;min-width:110px">
+        <div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">${label}</div>
+        <div style="font-size:17px;font-weight:700;color:${col}">${val}</div>
+      </div>`).join('');
+
+    // Decomposition note
+    document.getElementById('eko-decomp').innerHTML =
+      `<strong style="color:var(--gold)">Decomposition:</strong>
+       Long call @ ${sym}${conv(strike).toFixed(2)}  −  Short call @ ${sym}${conv(barrier).toFixed(2)}  −  Digital @ ${sym}${conv(barrier).toFixed(2)} paying ${sym}${conv(barrier - strike).toFixed(2)}<br>
+       <span style="color:var(--text-muted)">IV source: <strong>${data.iv_source}</strong> · r = ${(data.r * 100).toFixed(2)}% · T = ${data.T} yr</span>`;
+
+    // Payoff chart: EKO vs vanilla at expiry across spot range
+    if (ekoChart) { ekoChart.destroy(); ekoChart = null; }
+    const lo    = spot * 0.6;
+    const hi    = spot * 1.5;
+    const steps = 300;
+    const spRange = Array.from({length: steps+1}, (_, i) => lo + i * (hi - lo) / steps);
+    const ekoPayoff     = spRange.map(S => conv(S < strike ? 0 : S < barrier ? S - strike : 0));
+    const vanillaPayoff = spRange.map(S => conv(Math.max(S - strike, 0)));
+    const labels        = spRange.map(S => conv(S).toFixed(2));
+
+    // Find nearest label indices for spot, strike, barrier reference lines
+    const nearestLabel = val => labels.reduce((bl, l) => Math.abs(+l - conv(val)) < Math.abs(+bl - conv(val)) ? l : bl, labels[0]);
+
+    const grid = 'rgba(31,58,86,0.55)', tick = '#4a6280';
+    const ctx  = document.getElementById('eko-chart').getContext('2d');
+    ekoChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Vanilla Call Payoff', data: vanillaPayoff, borderColor: '#64748B', borderWidth: 1.8, borderDash: [6,4], pointRadius: 0, fill: false, tension: 0.1 },
+          { label: `EKO Call Payoff  (K=${sym}${conv(strike).toFixed(0)}  B=${sym}${conv(barrier).toFixed(0)})`, data: ekoPayoff, borderColor: '#4fc97e', borderWidth: 2.5, pointRadius: 0, fill: { target: 'origin', above: 'rgba(79,201,126,0.12)', below: 'transparent' }, tension: 0.1 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { labels: { color: tick, font: { size: 11 } } },
+          tooltip: { callbacks: {
+            title: ctx => `Spot: ${sym}${ctx[0].label}`,
+            label: ctx => ` ${ctx.dataset.label.split('  ')[0]}: ${sym}${ctx.parsed.y.toFixed(2)}`,
+          }},
+          annotation: { annotations: {
+            spotLine:    { type:'line', xMin: nearestLabel(spot),    xMax: nearestLabel(spot),    borderColor:'rgba(240,180,41,0.5)',   borderWidth:1, borderDash:[4,4], label:{ content:`Spot`,    display:true, position:'start', color:'#F0B429', font:{size:10} } },
+            strikeLine:  { type:'line', xMin: nearestLabel(strike),  xMax: nearestLabel(strike),  borderColor:'rgba(255,255,255,0.2)', borderWidth:1, borderDash:[3,3], label:{ content:`Strike`,  display:true, position:'end',   color:'#aaa',    font:{size:9}  } },
+            barrierLine: { type:'line', xMin: nearestLabel(barrier), xMax: nearestLabel(barrier), borderColor:'rgba(224,92,92,0.5)',   borderWidth:1, borderDash:[4,4], label:{ content:`Barrier`, display:true, position:'start', color:'#e05c5c', font:{size:10} } },
+          }}
+        },
+        scales: {
+          x: { ticks: { color: tick, font:{size:10}, maxTicksLimit:10, callback:(_,i)=> i % Math.floor(steps/8)===0 ? `${sym}${labels[i]}` : '' }, grid:{color:grid}, title:{display:true,text:'Spot Price at Expiry',color:tick,font:{size:11}} },
+          y: { ticks: { color: tick, font:{size:11}, callback: v => `${sym}${v.toFixed(2)}` }, grid:{color:grid}, title:{display:true,text:`Payoff (${usdMode ? 'USD' : currency})`,color:tick,font:{size:11}} }
+        }
+      }
+    });
+
+  } catch (e) {
+    errEl.textContent = e.message || 'EKO pricing failed.';
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Price EKO';
+  }
+}
+
+document.getElementById('eko-price-btn').addEventListener('click', fetchEko);
 
 // Wire up payoff Draw button and strategy change
 document.getElementById('payoff-draw-btn').addEventListener('click', renderPayoff);
