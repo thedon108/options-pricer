@@ -1,0 +1,22 @@
+{
+  "name": "Options Pricer",
+  "short_name": "OptionsPricer",
+  "description": "Black-Scholes, Basket & Autocall options pricer with Heston stochastic vol",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0D1B2A",
+  "theme_color": "#0D1B2A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
