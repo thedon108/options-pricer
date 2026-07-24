@@ -939,6 +939,184 @@ tbody td:first-child {
   margin: 0 auto;
 }
 #basket-page.active { display: block; }
+
+/* ── Learn page ── */
+#learn-page {
+  display: none;
+  padding: 24px 28px 60px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+#learn-page.active { display: block; }
+.learn-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+.learn-section h2 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0 0 14px;
+}
+.learn-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold);
+  margin: 18px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.learn-section p, .learn-section li {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.learn-section ul { padding-left: 18px; margin: 6px 0; }
+.learn-section li { margin-bottom: 4px; }
+.payoff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.payoff-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.payoff-card .label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.payoff-card p { font-size: 12.5px; color: var(--text); margin: 0; line-height: 1.6; }
+/* Quiz */
+#quiz-container { }
+.quiz-q {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin-bottom: 14px;
+}
+.quiz-q .q-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.quiz-q .q-num {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.quiz-opt:hover { border-color: var(--gold); color: var(--white); }
+.quiz-opt.correct { border-color: #4caf82; background: rgba(76,175,130,0.12); color: #4caf82; }
+.quiz-opt.wrong { border-color: #e05c5c; background: rgba(224,92,92,0.1); color: #e05c5c; }
+.quiz-opt.reveal { border-color: #4caf82; background: rgba(76,175,130,0.08); color: #4caf82; }
+.quiz-opt:disabled { cursor: default; }
+.quiz-explain {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  line-height: 1.6;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 5px;
+  border-left: 3px solid var(--gold);
+  display: none;
+}
+#quiz-submit-row { text-align: center; margin-top: 20px; }
+#quiz-submit { padding: 12px 36px; font-size: 14px; font-weight: 600; }
+#quiz-result {
+  display: none;
+  text-align: center;
+  padding: 30px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-top: 20px;
+}
+#quiz-result .score-big {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--gold);
+  line-height: 1;
+}
+#quiz-result .score-label {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 6px 0 18px;
+}
+#quiz-result .cert-btn {
+  margin-top: 14px;
+  display: inline-block;
+}
+#cert-banner {
+  display: none;
+  background: linear-gradient(135deg, #1a2f44 0%, #0d1b2a 100%);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  margin-top: 20px;
+}
+#cert-banner h2 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 24px;
+  color: var(--gold);
+  margin: 0 0 8px;
+}
+#cert-banner p { color: var(--text); font-size: 13px; margin: 4px 0; }
+#cert-banner .cert-name { font-size: 20px; font-weight: 700; color: var(--white); margin: 12px 0; }
+#cert-banner .cert-date { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
+.learn-tab-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.learn-tab-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.learn-tab-btn.active, .learn-tab-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(198,163,103,0.08);
+}
+.learn-panel { display: none; }
+.learn-panel.active { display: block; }
 #basket-page-header {
   margin-bottom: 20px;
 }
@@ -1096,6 +1274,9 @@ tbody td:first-child {
       </button>
       <button class="page-nav-btn" id="nav-basket" onclick="switchPage('basket')">
         <span style="font-size:11px">⬡</span> Basket Options
+      </button>
+      <button class="page-nav-btn" id="nav-learn" onclick="switchPage('learn')">
+        <span style="font-size:11px">📚</span> Learn
       </button>
     </nav>
   </div>
@@ -1660,6 +1841,164 @@ tbody td:first-child {
   </div>
 </div><!-- /basket-page -->
 
+<!-- ══ LEARN PAGE ══ -->
+<div id="learn-page">
+  <div style="margin-bottom:20px">
+    <h2 style="font-family:'Times New Roman',Times,serif;font-size:22px;font-weight:700;color:var(--white);margin:0 0 4px">Options Teach-In</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin:0">Learn the fundamentals, then test yourself with the quiz.</p>
+  </div>
+
+  <div class="learn-tab-nav">
+    <button class="learn-tab-btn active" onclick="switchLearnTab('what')">What is an Option?</button>
+    <button class="learn-tab-btn" onclick="switchLearnTab('payoffs')">Payoffs & Diagrams</button>
+    <button class="learn-tab-btn" onclick="switchLearnTab('greeks')">The Greeks</button>
+    <button class="learn-tab-btn" onclick="switchLearnTab('risks')">Risks & Benefits</button>
+    <button class="learn-tab-btn" onclick="switchLearnTab('quiz')">📝 Quiz</button>
+  </div>
+
+  <!-- WHAT IS AN OPTION -->
+  <div class="learn-panel active" id="lp-what">
+    <div class="learn-section">
+      <h2>What is an Option?</h2>
+      <p>An <strong style="color:var(--gold)">option</strong> is a contract that gives you the <em>right, but not the obligation</em>, to buy or sell an underlying asset at a fixed price (the <strong>strike</strong>) on or before a set date (the <strong>expiry</strong>). You pay a premium upfront for this right.</p>
+      <h3>The Two Types</h3>
+      <div class="payoff-grid">
+        <div class="payoff-card">
+          <div class="label">Call Option</div>
+          <p>Right to <strong>buy</strong> the underlying at the strike. You profit when the stock rises above the strike. Used to express a bullish view.</p>
+        </div>
+        <div class="payoff-card">
+          <div class="label">Put Option</div>
+          <p>Right to <strong>sell</strong> the underlying at the strike. You profit when the stock falls below the strike. Used to express a bearish view or hedge.</p>
+        </div>
+      </div>
+      <h3>Key Terms</h3>
+      <ul>
+        <li><strong>Strike (K):</strong> The fixed price at which you can buy/sell.</li>
+        <li><strong>Expiry (T):</strong> The date the option expires. After this it's worthless.</li>
+        <li><strong>Premium:</strong> The price you pay to buy the option.</li>
+        <li><strong>Underlying (S):</strong> The stock, index, or asset the option is based on.</li>
+        <li><strong>ITM / ATM / OTM:</strong> In-, at-, or out-of-the-money — whether exercising now would be profitable.</li>
+      </ul>
+      <h3>American vs European</h3>
+      <p><strong>European</strong> options can only be exercised at expiry. <strong>American</strong> options can be exercised any time up to expiry. Most listed equity options in the US are American; most index options are European.</p>
+    </div>
+    <div class="learn-section">
+      <h2>How Options are Priced</h2>
+      <p>The most famous model is <strong style="color:var(--gold)">Black-Scholes</strong>, which prices a European option using five inputs: spot price (S), strike (K), time to expiry (T), risk-free rate (r), and volatility (σ). The key insight is that you can <em>replicate</em> the option payoff by dynamically trading the stock — so the option must trade at that replication cost or arbitrage exists.</p>
+      <p style="margin-top:10px">Volatility (σ) is the most important and the only unobservable input. <strong>Implied volatility</strong> is the σ the market is pricing in — back-solved from observed option prices. Higher IV = more expensive options.</p>
+    </div>
+  </div>
+
+  <!-- PAYOFFS -->
+  <div class="learn-panel" id="lp-payoffs">
+    <div class="learn-section">
+      <h2>Payoff Diagrams</h2>
+      <p>A payoff diagram shows your profit or loss at expiry as a function of the underlying price. The <strong style="color:var(--gold)">kinked line</strong> is the key visual — options have asymmetric payoffs.</p>
+      <h3>Long Call</h3>
+      <p>You pay premium upfront. At expiry: if S &gt; K, payoff = S − K. If S ≤ K, payoff = 0. Max loss = premium paid. Upside is unlimited.</p>
+      <canvas id="cv-long-call" height="140" style="width:100%;margin:10px 0;border-radius:6px"></canvas>
+      <h3>Long Put</h3>
+      <p>You pay premium upfront. At expiry: if S &lt; K, payoff = K − S. If S ≥ K, payoff = 0. Max loss = premium. Profits as stock falls toward zero.</p>
+      <canvas id="cv-long-put" height="140" style="width:100%;margin:10px 0;border-radius:6px"></canvas>
+      <h3>Covered Call</h3>
+      <p>You own the stock and sell a call. You collect the premium and cap your upside at K. Common income strategy.</p>
+      <canvas id="cv-covered-call" height="140" style="width:100%;margin:10px 0;border-radius:6px"></canvas>
+      <h3>Protective Put</h3>
+      <p>You own the stock and buy a put. You pay premium but put a floor on losses. Insurance for your portfolio.</p>
+      <canvas id="cv-protective-put" height="140" style="width:100%;margin:10px 0;border-radius:6px"></canvas>
+    </div>
+  </div>
+
+  <!-- GREEKS -->
+  <div class="learn-panel" id="lp-greeks">
+    <div class="learn-section">
+      <h2>The Greeks</h2>
+      <p>Greeks measure how an option's price changes with respect to different inputs. Traders use them to understand and hedge risk.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+        <div class="payoff-card">
+          <div class="label">Delta (Δ)</div>
+          <p>How much the option price moves per $1 move in the stock. Call delta: 0 to 1. Put delta: −1 to 0. ATM options have delta ≈ ±0.5. Delta is also the approximate probability of expiring ITM.</p>
+        </div>
+        <div class="payoff-card">
+          <div class="label">Gamma (Γ)</div>
+          <p>Rate of change of delta. High gamma means delta changes rapidly — your hedge needs frequent rebalancing. Gamma is highest for ATM options near expiry.</p>
+        </div>
+        <div class="payoff-card">
+          <div class="label">Theta (Θ)</div>
+          <p>Time decay — how much value the option loses per day as expiry approaches. Long options lose value over time (negative theta). Short options gain (positive theta).</p>
+        </div>
+        <div class="payoff-card">
+          <div class="label">Vega (ν)</div>
+          <p>Sensitivity to implied volatility. Long options gain value when IV rises (positive vega). Short options lose. Vega is highest for longer-dated options.</p>
+        </div>
+        <div class="payoff-card">
+          <div class="label">Rho (ρ)</div>
+          <p>Sensitivity to interest rates. Calls have positive rho (benefit from rising rates), puts have negative rho. Generally small except for very long-dated options.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RISKS & BENEFITS -->
+  <div class="learn-panel" id="lp-risks">
+    <div class="learn-section">
+      <h2>Benefits of Options</h2>
+      <ul>
+        <li><strong>Leverage:</strong> Control a large position for a fraction of the cost of buying shares outright.</li>
+        <li><strong>Defined risk (long options):</strong> Max loss is limited to premium paid — you can never lose more.</li>
+        <li><strong>Hedging:</strong> Puts protect a long portfolio. Collars cap both upside and downside.</li>
+        <li><strong>Income generation:</strong> Selling covered calls generates income on shares you already own.</li>
+        <li><strong>Flexibility:</strong> Strategies exist for every market view — bullish, bearish, neutral, volatile, quiet.</li>
+      </ul>
+    </div>
+    <div class="learn-section">
+      <h2>Risks of Options</h2>
+      <ul>
+        <li><strong>Time decay:</strong> Long options lose value every day. You can be right on direction but still lose if you're too early.</li>
+        <li><strong>Volatility risk:</strong> IV can collapse after you buy, crushing option value even if the stock moves your way.</li>
+        <li><strong>Short option risk:</strong> Selling naked calls or puts has unlimited (or very large) downside. Never suitable without full understanding.</li>
+        <li><strong>Liquidity:</strong> Wide bid-ask spreads in illiquid options can make entry and exit costly.</li>
+        <li><strong>Complexity:</strong> Greeks, skew, term structure, early exercise — options have many moving parts that can surprise new traders.</li>
+      </ul>
+    </div>
+    <div class="learn-section">
+      <h2>Who Uses Options?</h2>
+      <ul>
+        <li><strong>Retail investors:</strong> Protective puts, covered calls, directional bets.</li>
+        <li><strong>Hedge funds:</strong> Volatility trading, event-driven strategies, portfolio hedging.</li>
+        <li><strong>Banks / Structured products:</strong> Autocalls, capital-protected notes, worst-of baskets — embedded options sold to clients.</li>
+        <li><strong>Corporates:</strong> FX and commodity options to hedge business risk.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="learn-panel" id="lp-quiz">
+    <div id="quiz-container"></div>
+    <div id="quiz-submit-row" style="display:none">
+      <button class="btn btn-primary" id="quiz-submit" onclick="submitQuiz()">Submit Quiz</button>
+    </div>
+    <div id="quiz-result">
+      <div class="score-big" id="quiz-score-big"></div>
+      <div class="score-label">out of 10 questions correct</div>
+      <div id="quiz-feedback" style="font-size:13px;color:var(--text);margin-bottom:16px"></div>
+      <button class="btn btn-primary cert-btn" id="cert-btn" onclick="showCert()" style="display:none">🎓 View Certificate</button>
+      <button class="btn" onclick="resetQuiz()" style="margin-top:10px;margin-left:8px">Retake Quiz</button>
+    </div>
+    <div id="cert-banner">
+      <div style="font-size:28px;margin-bottom:8px">🎓</div>
+      <h2>Certificate of Completion</h2>
+      <p>This certifies that</p>
+      <div class="cert-name" id="cert-name-display"></div>
+      <p>has successfully completed the <strong>Options Fundamentals</strong> course</p>
+      <p>and scored <strong id="cert-score-display"></strong> on the assessment.</p>
+      <div class="cert-date" id="cert-date-display"></div>
+      <div style="margin-top:20px;font-size:11px;color:var(--text-muted)">Options Pricer · Learn Module</div>
+    </div>
+  </div>
+</div><!-- /learn-page -->
+
 <!-- ══════════════════════════════════════
      FLOATING WINDOW: MONTE CARLO
 ══════════════════════════════════════ -->
@@ -1894,23 +2233,312 @@ const API_BASE = 'https://options-pricer-ceh0.onrender.com';
 
 })();
 
-// ── Page navigation (Single Stock ↔ Basket) ──────────────────────
+// ── Page navigation ──────────────────────────────────────────────
 function switchPage(page) {
   const single = document.getElementById('single-stock-page');
   const basket = document.getElementById('basket-page');
+  const learn  = document.getElementById('learn-page');
   const navSingle = document.getElementById('nav-single');
   const navBasket = document.getElementById('nav-basket');
+  const navLearn  = document.getElementById('nav-learn');
+  single.style.display = 'none';
+  basket.classList.remove('active');
+  learn.classList.remove('active');
+  navSingle.classList.remove('active');
+  navBasket.classList.remove('active');
+  navLearn.classList.remove('active');
   if (page === 'basket') {
-    single.style.display = 'none';
     basket.classList.add('active');
-    navSingle.classList.remove('active');
     navBasket.classList.add('active');
+  } else if (page === 'learn') {
+    learn.classList.add('active');
+    navLearn.classList.add('active');
+    initLearn();
   } else {
     single.style.display = '';
-    basket.classList.remove('active');
     navSingle.classList.add('active');
-    navBasket.classList.remove('active');
   }
+}
+
+// ── LEARN MODULE ─────────────────────────────────────────────────
+let _learnInited = false;
+
+function switchLearnTab(tab) {
+  document.querySelectorAll('.learn-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.learn-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('lp-' + tab).classList.add('active');
+  document.querySelectorAll('.learn-tab-btn').forEach(b => {
+    if (b.getAttribute('onclick').includes("'" + tab + "'")) b.classList.add('active');
+  });
+  if (tab === 'payoffs') drawPayoffDiagrams();
+  if (tab === 'quiz') initQuiz();
+}
+
+function initLearn() {
+  if (_learnInited) return;
+  _learnInited = true;
+}
+
+// ── Payoff diagrams ───────────────────────────────────────────────
+function drawPayoffDiagrams() {
+  requestAnimationFrame(() => {
+    drawPayoff('cv-long-call',     S => Math.max(S - 100, 0) - 8,  'Long Call');
+    drawPayoff('cv-long-put',      S => Math.max(100 - S, 0) - 6,  'Long Put');
+    drawPayoff('cv-covered-call',  S => (S - 90) + Math.min(100 - S, 0) + 7, 'Covered Call');
+    drawPayoff('cv-protective-put',S => (S - 90) + Math.max(100 - S, 0) - 6, 'Protective Put');
+  });
+}
+
+function drawPayoff(id, fn, label) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const W = canvas.offsetWidth || 600;
+  const H = 140;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const prices = [];
+  for (let i = 0; i <= 200; i++) prices.push(50 + i * 0.75);
+  const payoffs = prices.map(fn);
+  const maxP = Math.max(...payoffs, 0);
+  const minP = Math.min(...payoffs, 0);
+  const range = maxP - minP || 1;
+  const pad = { t: 14, b: 24, l: 44, r: 14 };
+  const W2 = W - pad.l - pad.r;
+  const H2 = H - pad.t - pad.b;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1b2a';
+  ctx.fillRect(0, 0, W, H);
+  const toX = i => pad.l + (i / (prices.length - 1)) * W2;
+  const toY = v => pad.t + H2 - ((v - minP) / range) * H2;
+  // zero line
+  ctx.strokeStyle = '#2a3f54';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  const zeroY = toY(0);
+  ctx.beginPath(); ctx.moveTo(pad.l, zeroY); ctx.lineTo(pad.l + W2, zeroY); ctx.stroke();
+  ctx.setLineDash([]);
+  // fill
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(payoffs[0]));
+  payoffs.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
+  ctx.lineTo(toX(prices.length - 1), toY(0));
+  ctx.lineTo(toX(0), toY(0));
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + H2);
+  grad.addColorStop(0, 'rgba(198,163,103,0.18)');
+  grad.addColorStop(1, 'rgba(198,163,103,0.02)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  // line
+  ctx.beginPath();
+  ctx.strokeStyle = '#c6a367';
+  ctx.lineWidth = 2;
+  ctx.moveTo(toX(0), toY(payoffs[0]));
+  payoffs.forEach((v, i) => ctx.lineTo(toX(i), toY(v)));
+  ctx.stroke();
+  // y-axis labels
+  ctx.fillStyle = '#6b7f93';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'right';
+  [minP, 0, maxP].forEach(v => {
+    const y = toY(v);
+    ctx.fillText((v >= 0 ? '+' : '') + v.toFixed(0), pad.l - 4, y + 3);
+  });
+  // label
+  ctx.fillStyle = '#8fa3b5';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(label, pad.l + 4, pad.t + 12);
+  // x-axis
+  ctx.fillStyle = '#6b7f93';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'center';
+  [60, 80, 100, 120, 140].forEach(p => {
+    const xi = prices.findIndex(x => x >= p);
+    if (xi >= 0) ctx.fillText(p, toX(xi), H - 6);
+  });
+}
+
+// ── Quiz ─────────────────────────────────────────────────────────
+const QUIZ_QUESTIONS = [
+  {
+    q: 'What does a call option give you the right to do?',
+    opts: ['Buy the underlying at the strike price', 'Sell the underlying at the strike price', 'Receive a dividend payment', 'Borrow shares at a fixed rate'],
+    answer: 0,
+    explain: 'A call option gives the holder the right (but not the obligation) to BUY the underlying asset at the agreed strike price on or before expiry.'
+  },
+  {
+    q: 'You buy a put option with strike $100 and pay a $5 premium. The stock expires at $85. What is your profit?',
+    opts: ['$10', '$15', '$5', '$20'],
+    answer: 0,
+    explain: 'Payoff = max(100 − 85, 0) = $15. Subtract the $5 premium paid: profit = $15 − $5 = $10.'
+  },
+  {
+    q: 'Which Greek measures how much an option\'s price changes for a $1 move in the underlying?',
+    opts: ['Gamma', 'Theta', 'Delta', 'Vega'],
+    answer: 2,
+    explain: 'Delta measures the rate of change of the option price with respect to a $1 move in the underlying stock price.'
+  },
+  {
+    q: 'An option is "at-the-money" (ATM) when:',
+    opts: ['The strike equals the current stock price', 'The option has no time value left', 'The option is profitable to exercise', 'The delta equals 1.0'],
+    answer: 0,
+    explain: 'ATM means the strike price is equal (or very close) to the current spot price of the underlying.'
+  },
+  {
+    q: 'Theta represents:',
+    opts: ['Sensitivity to interest rates', 'Time decay — value lost per day', 'Sensitivity to volatility', 'Rate of change of delta'],
+    answer: 1,
+    explain: 'Theta is time decay. Long options have negative theta — they lose value each day as expiry approaches, all else equal.'
+  },
+  {
+    q: 'You own 100 shares of a stock and sell 1 call option against them. This strategy is called:',
+    opts: ['Protective Put', 'Long Straddle', 'Covered Call', 'Bull Call Spread'],
+    answer: 2,
+    explain: 'A covered call means you own the underlying shares (you\'re "covered") and sell a call against them to generate premium income.'
+  },
+  {
+    q: 'Implied volatility (IV) is:',
+    opts: ['The historical volatility of the stock over the past year', 'The volatility the market is pricing into current option prices', 'The maximum possible move in a single day', 'The volatility predicted by Black-Scholes'],
+    answer: 1,
+    explain: 'Implied volatility is back-solved from the market price of an option using the Black-Scholes formula. It reflects the market\'s expectation of future volatility.'
+  },
+  {
+    q: 'Which of the following has UNLIMITED loss potential for the seller?',
+    opts: ['Covered Call', 'Long Put', 'Naked Call', 'Protective Put'],
+    answer: 2,
+    explain: 'A naked (uncovered) call seller has unlimited downside because the stock price can theoretically rise without limit, forcing them to deliver shares at the (low) strike.'
+  },
+  {
+    q: 'Vega measures an option\'s sensitivity to changes in:',
+    opts: ['The stock price', 'Time to expiry', 'Implied volatility', 'Interest rates'],
+    answer: 2,
+    explain: 'Vega measures how much an option\'s price changes for a 1% move in implied volatility. Long options have positive vega — they gain value when IV rises.'
+  },
+  {
+    q: 'A European option differs from an American option in that:',
+    opts: ['It can only be exercised at expiry', 'It can only be bought by European investors', 'It has no expiry date', 'It always costs more'],
+    answer: 0,
+    explain: 'European options can only be exercised at the expiry date, whereas American options can be exercised at any time up to and including expiry.'
+  }
+];
+
+let _quizInited = false;
+let _quizAnswered = [];
+let _quizSelected = [];
+
+function initQuiz() {
+  if (_quizInited) return;
+  _quizInited = true;
+  _quizAnswered = new Array(QUIZ_QUESTIONS.length).fill(false);
+  _quizSelected = new Array(QUIZ_QUESTIONS.length).fill(null);
+  const saved = localStorage.getItem('options_quiz_result');
+  renderQuizQuestions();
+  document.getElementById('quiz-submit-row').style.display = 'block';
+  if (saved) {
+    const data = JSON.parse(saved);
+    showQuizResult(data.score, data.name, data.date, false);
+  }
+}
+
+function renderQuizQuestions() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = QUIZ_QUESTIONS.map((q, qi) => `
+    <div class="quiz-q" id="qq-${qi}">
+      <div class="q-num">Question ${qi + 1} of ${QUIZ_QUESTIONS.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="quiz-options">
+        ${q.opts.map((opt, oi) => `
+          <button class="quiz-opt" id="qo-${qi}-${oi}" onclick="selectOpt(${qi},${oi})">${opt}</button>
+        `).join('')}
+      </div>
+      <div class="quiz-explain" id="qe-${qi}">${q.explain}</div>
+    </div>
+  `).join('');
+}
+
+function selectOpt(qi, oi) {
+  if (_quizAnswered[qi]) return;
+  _quizSelected[qi] = oi;
+  QUIZ_QUESTIONS[qi].opts.forEach((_, i) => {
+    const btn = document.getElementById(`qo-${qi}-${i}`);
+    btn.classList.remove('correct', 'wrong', 'reveal');
+  });
+  document.getElementById(`qo-${qi}-${oi}`).classList.add(oi === QUIZ_QUESTIONS[qi].answer ? 'correct' : 'wrong');
+}
+
+function submitQuiz() {
+  let unanswered = 0;
+  _quizSelected.forEach((sel, qi) => { if (sel === null) unanswered++; });
+  if (unanswered > 0) {
+    alert(`Please answer all questions. You have ${unanswered} unanswered.`);
+    return;
+  }
+  let score = 0;
+  QUIZ_QUESTIONS.forEach((q, qi) => {
+    _quizAnswered[qi] = true;
+    const sel = _quizSelected[qi];
+    const correct = q.answer;
+    QUIZ_QUESTIONS[qi].opts.forEach((_, oi) => {
+      const btn = document.getElementById(`qo-${qi}-${oi}`);
+      btn.disabled = true;
+      btn.classList.remove('correct', 'wrong', 'reveal');
+      if (oi === sel && sel === correct) btn.classList.add('correct');
+      else if (oi === sel && sel !== correct) btn.classList.add('wrong');
+      else if (oi === correct) btn.classList.add('reveal');
+    });
+    document.getElementById(`qe-${qi}`).style.display = 'block';
+    if (sel === correct) score++;
+  });
+  const name = prompt('Enter your name for the certificate (or leave blank):') || 'Learner';
+  const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  localStorage.setItem('options_quiz_result', JSON.stringify({ score, name, date }));
+  document.getElementById('quiz-submit-row').style.display = 'none';
+  showQuizResult(score, name, date, true);
+}
+
+function showQuizResult(score, name, date, scrollTo) {
+  const result = document.getElementById('quiz-result');
+  result.style.display = 'block';
+  document.getElementById('quiz-score-big').textContent = `${score}/10`;
+  const pct = score / 10;
+  let msg = '';
+  if (pct >= 0.9) msg = 'Outstanding! You clearly know your options.';
+  else if (pct >= 0.7) msg = 'Great work — solid understanding of the fundamentals.';
+  else if (pct >= 0.5) msg = 'Good effort. Review the sections you found tricky.';
+  else msg = 'Keep studying — head back to the teach-in and try again.';
+  document.getElementById('quiz-feedback').textContent = msg;
+  const certBtn = document.getElementById('cert-btn');
+  if (pct >= 0.7) {
+    certBtn.style.display = 'inline-block';
+    certBtn.onclick = () => showCert(score, name, date);
+  } else {
+    certBtn.style.display = 'none';
+  }
+  if (scrollTo) result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showCert(score, name, date) {
+  const saved = localStorage.getItem('options_quiz_result');
+  if (!score && saved) { const d = JSON.parse(saved); score = d.score; name = d.name; date = d.date; }
+  const banner = document.getElementById('cert-banner');
+  banner.style.display = 'block';
+  document.getElementById('cert-name-display').textContent = name || 'Learner';
+  document.getElementById('cert-score-display').textContent = `${score}/10`;
+  document.getElementById('cert-date-display').textContent = `Issued: ${date}`;
+  banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetQuiz() {
+  _quizInited = false;
+  _quizAnswered = [];
+  _quizSelected = [];
+  localStorage.removeItem('options_quiz_result');
+  document.getElementById('quiz-result').style.display = 'none';
+  document.getElementById('cert-banner').style.display = 'none';
+  document.getElementById('quiz-submit-row').style.display = 'none';
+  document.getElementById('quiz-container').innerHTML = '';
+  initQuiz();
 }
 
 // pre-fill MC window from current ticker data
