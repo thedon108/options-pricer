@@ -186,6 +186,12 @@ def collect_ivs(tk, spot, target_T, rfr, k_pct):
     return interp(atm_pts), interp(k_pts)
 
 
+@app.route('/ping')
+def ping():
+    """Health check — also used by the keep-alive pinger to prevent Render free-tier spin-down."""
+    return jsonify(ok=True)
+
+
 @app.route('/basket-quote')
 def basket_quote():
     t1    = request.args.get('t1', '').upper().strip()

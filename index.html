@@ -31,7 +31,29 @@
   --green:       #22C55E;
   --red:         #EF4444;
   --white:       #f0f4f8;
+  --card:        var(--navy-card);
+  --border:      var(--navy-border);
+  --bg:          var(--navy);
 }
+
+.btn {
+  background: var(--navy-mid);
+  border: 1px solid var(--navy-border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn:hover { border-color: var(--gold); color: var(--gold); }
+.btn.btn-primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--navy);
+}
+.btn.btn-primary:hover { background: var(--gold-dim); color: var(--navy); }
 
 html { scroll-behavior: smooth; }
 
@@ -2134,6 +2156,10 @@ tbody td:first-child {
 // ── API base URL — change this after deploying to Render ──────────
 const API_BASE = 'https://options-pricer-ceh0.onrender.com';
 
+// Warm up the Render backend on page load (free tier sleeps after ~15 min idle,
+// and a cold start takes 30–60s — this gets it spinning before the user needs it)
+fetch(`${API_BASE}/ping`).catch(() => {});
+
 // ══════════════════════════════════════
 // FLOATING WINDOW SYSTEM
 // ══════════════════════════════════════
@@ -3072,7 +3098,11 @@ function renderVolSurface() {
 
   // Moneyness buckets: 70% to 130% of spot
   const moneyness = [0.70,0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25,1.30];
-  const expiries = allExpiries.filter(e => chainCache[e] && chainCache[e].calls && chainCache[e].calls.length);
+  // Skip expiries under ~2 days — 0-DTE yfinance IVs blow up to 200-300% and pollute the surface
+  const expiries = allExpiries.filter(e => {
+    const days = (new Date(e + 'T00:00:00') - Date.now()) / 86400000;
+    return days > 1.5 && chainCache[e] && chainCache[e].calls && chainCache[e].calls.length;
+  });
 
   if (!expiries.length) {
     document.getElementById('surface-note').textContent = 'No chain data available for vol surface.';
@@ -3889,9 +3919,10 @@ function renderChart(tab) {
   } else if (tab === 'smile') {
     const rows = currentData.calls;
     const strikes  = rows.map(r => r.strike);
-    const iv       = rows.map(r => +(r.iv) * 100);
-    const ivLower  = rows.map(r => +(r.iv_lower) * 100);
-    const ivUpper  = rows.map(r => +(r.iv_upper) * 100);
+    // API delivers iv / iv_lower / iv_upper already in percent (e.g. 46.75)
+    const iv       = rows.map(r => +r.iv);
+    const ivLower  = rows.map(r => +r.iv_lower);
+    const ivUpper  = rows.map(r => +r.iv_upper);
 
     const lowerLabel = currentData.lower_expiry ? `Lower (${currentData.lower_expiry})` : 'Lower Bracket IV';
     const upperLabel = currentData.upper_expiry ? `Upper (${currentData.upper_expiry})` : 'Upper Bracket IV';
@@ -3995,7 +4026,11 @@ function renderTable(tab) {
     const tr = document.createElement('tr');
     if (i === atmIdx) tr.className = 'atm-row';
 
-    const mn = r.moneyness || '';
+    // API moneyness is call-perspective (K < spot = ITM) — flip ITM/OTM for puts
+    let mn = r.moneyness || '';
+    if (tab === 'puts' && !mn.toLowerCase().includes('atm')) {
+      mn = mn.toLowerCase().includes('itm') ? 'OTM' : mn.toLowerCase().includes('otm') ? 'ITM' : mn;
+    }
     let mnClass = 'mn-otm', mnLabel = mn;
     if (mn.toLowerCase().includes('atm')) { mnClass = 'mn-atm'; mnLabel = 'ATM'; }
     else if (mn.toLowerCase().includes('itm')) { mnClass = 'mn-itm'; }
@@ -4578,7 +4613,7 @@ function _hestonBatch(cfg, i0, i1, runSeed, acc, paths, payoffs) {
 
     acc.sum  += pv;
     acc.sum2 += pv * pv;
-    if (ko && (struct === 'uo' || struct === 'do' || struct === 'dko')) acc.ko++;
+    if (ko) acc.ko++;  // for ui/di this counts knock-ins; ko is never set for vanilla
 
     if (path) { path.push(S); paths.push(path); }
     payoffs.push(pv);
@@ -4675,7 +4710,8 @@ function _mcBatch(cfg,i0,i1,runSeed,acc,paths,payoffs){
     else if(struct==='di')payoff=koDn?raw:0;
 
     const pv=payoff*Math.exp(-r*cfg.T);
-    acc.sum+=pv; acc.sum2+=pv*pv; acc.ko+=(knocked?1:0); acc.n++;
+    const barrierHit=struct==='ui'?koUp:struct==='di'?koDn:knocked;
+    acc.sum+=pv; acc.sum2+=pv*pv; acc.ko+=(barrierHit?1:0); acc.n++;
     if(payoff>0)payoffs.push(payoff);
   }
 }
@@ -4806,7 +4842,7 @@ function _mcFinish(cfg,acc,N,r,T,sig,S0,K,U,L,isCall,struct){
     {label:'95% CI', value:`${sym}${lo.toFixed(3)} – ${sym}${hi.toFixed(3)}`, color:'var(--text-dim)', small:true},
     {label:'Std Error', value:`${sym}${se.toFixed(4)}`, color:'var(--text-dim)'},
     {label:'Paths', value:N.toLocaleString(), color:'var(--text)'},
-    ...(struct!=='van'?[{label:'Knocked Out', value:`${koPct.toFixed(1)}%`, color:'var(--red)'}]:[]),
+    ...(struct!=='van'?[{label:(struct==='ui'||struct==='di')?'Knocked In':'Knocked Out', value:`${koPct.toFixed(1)}%`, color:'var(--red)'}]:[]),
     ...(analytic!==null?[{label: cfg.useHeston ? 'Heston Analytic' : 'BS Analytic', value:`${sym}${analytic.toFixed(4)}`, color:'var(--teal)'}]:[]),
   ];
   cardsEl.innerHTML=cardDefs.map(c=>`
@@ -6267,10 +6303,12 @@ function downloadChainCSV() {
 
   const lines = [headers.join(',')];
   rows.forEach(row => {
-    const K=+row.strike, mkt=+row.price, iv=+row.iv/100;
+    const K=+row.strike, mkt=row.market_price!=null?+row.market_price:0, iv=+row.iv/100;
     const bs=row.bs_price!=null?+row.bs_price:0;
     const diff=mkt>0?((bs-mkt)/mkt*100):0;
-    const mn=K<spot*0.98?'ITM':K>spot*1.02?'OTM':'ATM';
+    const itmSide = isCall ? K<spot*0.98 : K>spot*1.02;
+    const otmSide = isCall ? K>spot*1.02 : K<spot*0.98;
+    const mn=itmSide?'ITM':otmSide?'OTM':'ATM';
     lines.push([K, mn, bs.toFixed(4), mkt.toFixed(4), diff.toFixed(2)+'%',
                 iv>0?(iv*100).toFixed(2):'',
                 row.delta!=null?(+row.delta).toFixed(4):'',

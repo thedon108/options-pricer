@@ -1,4 +1,4 @@
-const CACHE = 'options-pricer-v1';
+const CACHE = 'options-pricer-v2';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
