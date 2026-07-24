@@ -1,0 +1,18 @@
+name: Keep Render backend awake
+
+# Render's free tier spins the web service down after ~15 minutes of no traffic,
+# making the next request take 30-60s. This pings /ping every 10 minutes so the
+# backend stays warm. Note: GitHub auto-disables scheduled workflows after 60
+# days without repo activity — re-enable it from the Actions tab if that happens.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend
+        run: curl -sS -m 60 https://options-pricer-ceh0.onrender.com/ping || true
