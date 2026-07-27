@@ -115,6 +115,39 @@ html { scroll-behavior: smooth; }
   #hero h1 { font-size: 17px; }
 }
 
+/* ── iOS / small-phone: no-scroll landing ── */
+@media (max-width: 480px) {
+  /* Hide decorative hero — gets ticker input above the fold */
+  #hero { display: none; }
+
+  /* Stats row: single horizontal scroll strip instead of wrapping grid */
+  #stats-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  #stats-row::-webkit-scrollbar { display: none; }
+  .stat-card {
+    flex: 0 0 auto;
+    min-width: 110px;
+    padding: 10px 12px 8px;
+  }
+  .stat-value { font-size: 16px; }
+
+  /* Tighten header — hide Monte Carlo + USD toggle to save space */
+  .win-launcher { display: none !important; }
+  #usd-toggle { display: none !important; }
+
+  /* Nav labels: icon only on very small screens */
+  #page-nav .page-nav-btn { padding: 5px 8px; font-size: 11px; gap: 3px; }
+
+  /* Content area flush to edges */
+  #content { padding: 8px 10px 20px; gap: 8px; }
+}
+
 body {
   background: var(--navy);
   color: var(--text);
